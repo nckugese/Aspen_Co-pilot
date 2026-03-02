@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "aspen-plus": {
-      "command": "C:/Users/alan0/AppData/Local/Programs/Python/Python311/python.exe",
-      "args": ["C:/Users/alan0/LLM/aspen-mcp/server.py"]
-    }
-  }
-}
