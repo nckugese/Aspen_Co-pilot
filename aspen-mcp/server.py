@@ -45,6 +45,12 @@ def list_aspen_sessions() -> str:
 
 
 @mcp.tool()
+def reinit_simulation(session_name: str) -> str:
+    """Reinitialize the simulation in a given session"""
+    return main_tools.reinit_simulation(manager, session_name)
+
+
+@mcp.tool()
 def run_simulation(session_name: str) -> str:
     """Run the simulation in a given session"""
     return main_tools.run_simulation(manager, session_name)

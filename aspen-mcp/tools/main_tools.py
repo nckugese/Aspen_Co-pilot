@@ -18,6 +18,11 @@ def list_aspen_sessions(manager) -> str:
     return manager.list_sessions()
 
 
+def reinit_simulation(manager, session_name: str) -> str:
+    """Reinitialize the simulation in a given session."""
+    return manager.reinit(session_name)
+
+
 def run_simulation(manager, session_name: str) -> str:
     """Run the simulation in a given session."""
     return manager.run(session_name)

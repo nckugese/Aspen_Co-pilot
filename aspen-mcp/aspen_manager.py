@@ -87,13 +87,23 @@ class AspenPlusManager:
     # Simulation control
     # ------------------------------------------------------------------
 
-    def run(self, session_name: str) -> str:
-        """Run (reinitialize + run) the simulation."""
+    def reinit(self, session_name: str) -> str:
+        """Reinitialize the simulation."""
         if not self._is_alive(session_name):
             return f"No active session named '{session_name}'."
         try:
             app = self._sessions[session_name]
             app.Reinit()
+            return f"Simulation '{session_name}' reinitialized."
+        except Exception as exc:
+            return f"Failed to reinitialize simulation '{session_name}'. Error: {exc}"
+
+    def run(self, session_name: str) -> str:
+        """Run the simulation."""
+        if not self._is_alive(session_name):
+            return f"No active session named '{session_name}'."
+        try:
+            app = self._sessions[session_name]
             app.Run2()
             return f"Simulation '{session_name}' run completed."
         except Exception as exc:
