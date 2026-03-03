@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from searcher.definition_searcher import DefinitionSearcher
+from .definition_searcher import DefinitionSearcher
 
 
 def search_properties(searcher: DefinitionSearcher, query: str) -> str:

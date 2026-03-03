@@ -8,11 +8,11 @@ from __future__ import annotations
 
 from mcp.server.fastmcp import FastMCP
 
-from aspen_manager import AspenPlusManager
-from searcher import DefinitionSearcher
-from tools import main_tools, flowsheet_tools, block_tools, stream_tools, create_tools
-from tools.properties_tools import get_property_method as _get_prop, set_property_method as _set_prop, add_component as _add_comp
-from searcher.tool_searcher import search_properties as _search_props
+from .aspen_manager import AspenPlusManager
+from .searcher import DefinitionSearcher
+from .tools import main_tools, flowsheet_tools, block_tools, stream_tools, create_tools
+from .tools.properties_tools import get_property_method as _get_prop, set_property_method as _set_prop, add_component as _add_comp
+from .searcher.tool_searcher import search_properties as _search_props
 
 # ------------------------------------------------------------------
 # Core objects
