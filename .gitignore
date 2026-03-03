@@ -7,6 +7,4 @@ __pycache__/
   venv/
   .venv/
 .claude/
-  .mcp.json
-.mcp.json
 .bkp

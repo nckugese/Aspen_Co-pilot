@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "aspen-plus": {
+      "command": "python",
+      "args": ["-m","aspen-mcp.server"]
+    }
+  }
+}
