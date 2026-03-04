@@ -1,0 +1,1220 @@
+
+============================================================
+Aspen Plus GUI 41.0  (82 items)
+============================================================
+
+[DISPATCH] IHNode  -- Node object for the Aspen Plus GUI data.
+    [METHOD] QueryInterface(riid, ppvObj)
+    [METHOD] AddRef()
+    [METHOD] Release()
+    [METHOD] GetTypeInfoCount(pctinfo)
+    [METHOD] GetTypeInfo(itinfo, lcid, pptinfo)
+    [METHOD] GetIDsOfNames(riid, rgszNames, cNames, lcid, rgdispid)
+    [METHOD] Invoke(dispidMember, riid, lcid, wFlags, pdispparams, pvarResult, pexcepinfo, puArgErr)
+    [GET   ] Application()
+    [GET   ] Parent()
+    [GET   ] Name(force)
+    [PUT   ] Name(force)
+    [GET   ] Dimension()
+    [GET   ] ValueType()
+    [GET   ] Value(force)
+    [PUT   ] Value(force)
+    [METHOD] SetValueAndUnit(Value, unitcol, force)
+    [METHOD] SetValueUnitAndBasis(Value, unitcol, basis, force)
+    [GET   ] HasAttribute(attrnumber)
+    [GET   ] AttributeType(attrnumber)
+    [GET   ] AttributeValue(attrnumber, force)
+    [PUT   ] AttributeValue(attrnumber, force)
+    [GET   ] HasClassAttribute(classid)
+    [GET   ] ClassAttributeType(classid)
+    [GET   ] ClassAttributeValue(classid, force)
+    [PUT   ] ClassAttributeValue(classid, force)
+    [GET   ] Elements()
+    [GET   ] Process()
+    [METHOD] Delete()
+    [METHOD] RemoveAll()
+    [METHOD] AddClassAttribute(classid, type)
+    [METHOD] DeleteClassAttribute(classid)
+    [METHOD] Copy()
+    [METHOD] CopyWithFormat()
+    [METHOD] PrintUseful(append, filename)
+    [METHOD] FindNode(path)
+    [METHOD] Paste()
+    [METHOD] PasteSpecial()
+    [METHOD] IsLinked()
+    [METHOD] RemoveLink()
+    [METHOD] NextIncomplete(code)
+    [METHOD] BrowseNext(direction, io)
+    [METHOD] Dummy(__MIDL__IHNode0000, __MIDL__IHNode0001)
+    [METHOD] Hide(Name)
+    [METHOD] Reveal(Name)
+    [METHOD] Clear()
+    [METHOD] NotifyRunStep()
+    [METHOD] HoldNotifies(hold)
+    [METHOD] IsValid()
+    [METHOD] NewChild(Name)
+    [METHOD] RenameChild(Name)
+    [METHOD] IsSpecialType(type)
+    [METHOD] Reaquire()
+    [GET   ] UnitString()
+    [GET   ] ValueForUnit(unitrow, unitcol)
+    [METHOD] PFSSelectModel()
+    [METHOD] PFSClearSelection()
+    [METHOD] Reconcile(code)
+    [METHOD] NewID(Name)
+    [METHOD] Export(filename)
+    [METHOD] DoObjectVerb(oleverb)
+    [METHOD] AppendTemplate(pUnkTempl, flag)
+    [METHOD] Import(filename)
+    [PUT   ] RefreshOff()
+    [GET   ] SharedData()
+
+[DISPATCH] IHapp  -- Application object for the ASPEN PLUS GUI.
+    [METHOD] QueryInterface(riid, ppvObj)
+    [METHOD] AddRef()
+    [METHOD] Release()
+    [METHOD] GetTypeInfoCount(pctinfo)
+    [METHOD] GetTypeInfo(itinfo, lcid, pptinfo)
+    [METHOD] GetIDsOfNames(riid, rgszNames, cNames, lcid, rgdispid)
+    [METHOD] Invoke(dispidMember, riid, lcid, wFlags, pdispparams, pvarResult, pexcepinfo, puArgErr)
+    [GET   ] Application()
+    [GET   ] Parent()
+    [GET   ] FullName()
+    [GET   ] Name()
+    [GET   ] Visible()
+    [PUT   ] Visible()
+    [GET   ] New(filename)
+    [METHOD] Restore(filename)
+    [METHOD] InitNew(filename, overwrite)
+    [METHOD] InitFromFile(filename, readonly)
+    [METHOD] InitFromArchive(filename)
+    [GET   ] Tree()
+    [METHOD] Save()
+    [METHOD] SaveAs(filename, overwrite)
+    [METHOD] WriteArchive(filename)
+    [METHOD] Run()
+    [METHOD] Close(reserved)
+    [GET   ] Choose(flag)
+    [METHOD] NewSelection(Key)
+    [GET   ] Selection(Key)
+    [METHOD] DeleteSelection(Key)
+    [METHOD] SaveSelection(Key)
+    [METHOD] Reinit()
+    [METHOD] InitFromTemplate(filename)
+    [METHOD] CreateRouteTree(propname, routeid, opsetid, flag)
+    [GET   ] NewAsync(filename)
+    [METHOD] SetAsync()
+    [GET   ] Engine()
+    [METHOD] SaveLink(pStrm, format)
+    [METHOD] LoadLink(pStrm, format)
+    [METHOD] RefreshExportedLinks()
+    [METHOD] Activate()
+    [METHOD] SetCompat(flag)
+    [METHOD] Reconcile(code)
+    [METHOD] AdviseParent(dAdviseType, lParam)
+    [GET   ] New2(filename, bSync)
+    [METHOD] Generate(filename, mode)
+    [METHOD] Readback(filename, mode)
+    [METHOD] SetParent(pParentAdviseSink, dwCookie)
+    [METHOD] WriteArchive2(filename, bSaveChildren)
+    [GET   ] New3(filename, host_type, node, username, password, working_directory, failmode)
+    [GET   ] Restore2(filename)
+    [METHOD] InitNew2(notused, notused2, host_type, node, username, password, working_directory, failmode)
+    [METHOD] InitFromFile2(filename, readonly, host_type, node, username, password, working_directory, failmode)
+    [METHOD] InitFromArchive2(filename, host_type, node, username, password, working_directory, failmode)
+    [METHOD] Run2(async)
+    [METHOD] InitFromTemplate2(filename, host_type, node, username, password, working_directory, failmode)
+    [GET   ] LibRef()
+    [GET   ] SuppressDialogs()
+    [PUT   ] SuppressDialogs()
+    [METHOD] Export(reptype, filename)
+    [METHOD] UIDisable(Key)
+    [GET   ] EngineSimulation()
+    [GET   ] EngineServer()
+    [METHOD] InitFromXML(argument)
+    [GET   ] ProcessId()
+    [GET   ] RootModel(path)
+    [METHOD] InitFromArchive3(filename, open_type, host_type, node, username, password, working_directory, failmode)
+    [METHOD] Import(filename)
+    [GET   ] StrongReferences()
+    [METHOD] EditCompoundDocument(filename)
+    [GET   ] RefreshOff()
+    [PUT   ] RefreshOff()
+    [METHOD] RunScript(filename)
+    [METHOD] AutoSave()
+    [METHOD] Save2()
+    [METHOD] SaveAs2(filename, overwrite)
+    [METHOD] Quit(reserved)
+    [METHOD] CloseDocument(Save)
+    [GET   ] FailedToOpenKey()
+    [GET   ] FailedToOpenDescription()
+
+[DISPATCH] IHSelection  -- Selection buffer for ASPEN PLUS GUI.
+    [METHOD] QueryInterface(riid, ppvObj)
+    [METHOD] AddRef()
+    [METHOD] Release()
+    [METHOD] GetTypeInfoCount(pctinfo)
+    [METHOD] GetTypeInfo(itinfo, lcid, pptinfo)
+    [METHOD] GetIDsOfNames(riid, rgszNames, cNames, lcid, rgdispid)
+    [METHOD] Invoke(dispidMember, riid, lcid, wFlags, pdispparams, pvarResult, pexcepinfo, puArgErr)
+    [GET   ] Application()
+    [GET   ] Parent()
+    [GET   ] Count()
+    [GET   ] Item(loc_or_name)
+    [GET   ] ItemType(loc_or_name)
+    [GET   ] Key()
+    [GET   ] Label(location)
+    [PUT   ] Label(location)
+    [METHOD] Add(loc_or_name, type, Item, owner, scrollarea, row, col, index, xtwip, ytwip)
+    [METHOD] Clear()
+    [METHOD] Remove(loc_or_name)
+    [METHOD] Find(object)
+    [METHOD] Copy()
+    [METHOD] CopyWithFormat()
+    [METHOD] Paste()
+    [METHOD] PasteSpecial(format, link)
+    [METHOD] Lock(fLock)
+    [METHOD] ClearOwned(owner)
+    [METHOD] CanPrint()
+    [METHOD] PreparePrinting()
+
+[DISPATCH] IHAPEngine  -- Interface to ASPEN PLUS simulation engine.
+    [METHOD] QueryInterface(riid, ppvObj)
+    [METHOD] AddRef()
+    [METHOD] Release()
+    [METHOD] GetTypeInfoCount(pctinfo)
+    [METHOD] GetTypeInfo(itinfo, lcid, pptinfo)
+    [METHOD] GetIDsOfNames(riid, rgszNames, cNames, lcid, rgdispid)
+    [METHOD] Invoke(dispidMember, riid, lcid, wFlags, pdispparams, pvarResult, pexcepinfo, puArgErr)
+    [GET   ] RunControl()
+    [PUT   ] RunControl()
+    [GET   ] ControlPanel()
+    [PUT   ] ControlPanel()
+    [GET   ] Ready()
+    [METHOD] Run()
+    [METHOD] Step()
+    [METHOD] Stop()
+    [METHOD] Reinit(object_type, object_id)
+    [METHOD] MoveTo(object_type, object_id)
+    [METHOD] ConnectionDialog()
+    [METHOD] Host(host_type, node, username, password, working_directory)
+    [GET   ] HostCount()
+    [METHOD] HostDescription(host_type)
+    [METHOD] RunSettings()
+    [GET   ] EngineFilesSettings(file)
+    [PUT   ] EngineFilesSettings(file)
+    [GET   ] OptionSettings(type)
+    [PUT   ] OptionSettings(type)
+    [METHOD] StopPoints()
+    [GET   ] StopPointCount()
+    [METHOD] GetStopPoint(index, type, object_id, before_or_after)
+    [METHOD] AddStopPoint(type, object_id, before_or_after)
+    [METHOD] DeleteStopPoint(index)
+    [METHOD] ClearStopPoints()
+    [METHOD] Dummy(rtype)
+    [GET   ] IsRunning()
+    [METHOD] Run2(async)
+    [METHOD] ProcessInput()
+    [METHOD] ExportReport(filename, contents, object_id)
+    [METHOD] SynchronizeEO(reserved)
+    [METHOD] ReinitializeEO(reserved)
+
+[ENUM] IAP_MOVETO_TYPE
+    IAP_MOVETO_BLOCK = 0
+    IAP_MOVETO_CONVERGENCE = 1
+    IAP_MOVETO_SENSITIVITY = 2
+    IAP_MOVETO_CALCULATOR = 3
+    IAP_MOVETO_TRANSFER = 4
+    IAP_MOVETO_EQUIPMENT = 5
+    IAP_MOVETO_ECONOMIC = 6
+    IAP_MOVETO_UTILITY = 7
+    IAP_MOVETO_PRESRELIEF = 8
+    IAP_MOVETO_REGRESSION = 9
+    IAP_MOVETO_BALANCE = 10
+    IAP_MOVETO_START = 11
+    IAP_MOVETO_MEASUREMENT = 20
+
+[ENUM] IAP_ENGINEFILES
+    IAP_PP1A = 0
+    IAP_PP1B = 1
+    IAP_PP2A = 2
+    IAP_PP2B = 3
+    IAP_PP2C = 4
+    IAP_INSERTLIB = 5
+    IAP_COST = 6
+    IAP_STREAMLIB = 7
+    IAP_RUNDEF = 8
+    IAP_LINKEROPT = 9
+
+[ENUM] IAP_RUN_OPTION
+    IAP_RUN_EXPRESS = 0
+    IAP_RUN_INTERTACTIVE = 1
+    IAP_RUN_MUSTBECOMPLETE = 2
+    IAP_RUN_COPY_DRS_PCES = 3
+    IAP_RUN_COPY_DRS = 4
+    IAP_RUN_COPY_PCES = 5
+    IAP_RUN_COPY_RETRIEVED = 6
+
+[ENUM] IAP_STOPPOINT_TYPE
+    IAP_STOPPOINT_BLOCK = 1
+    IAP_STOPPOINT_CONVERGENCE = 2
+    IAP_STOPPOINT_SENSITIVITY = 3
+    IAP_STOPPOINT_CALCULATOR = 4
+    IAP_STOPPOINT_TRANSFER = 5
+    IAP_STOPPOINT_EQUIPMENT = 6
+    IAP_STOPPOINT_ECONOMIC = 7
+    IAP_STOPPOINT_UTILITY = 8
+    IAP_STOPPOINT_PRESRELIEF = 9
+    IAP_STOPPOINT_REGRESSION = 10
+    IAP_STOPPOINT_BALANCE = 11
+
+[ENUM] IAP_REINIT_TYPE
+    IAP_REINIT_SIMULATION = 4
+    IAP_REINIT_BLOCK = 1
+    IAP_REINIT_CONVERGENCE = 2
+    IAP_REINIT_STREAM = 3
+
+[ENUM] HAPReportType
+    HAP_REPORT_INTERACTIVE = 0
+    HAP_REPORT_BLOCK = 1
+    HAP_REPORT_CONVERGENCE = 2
+    HAP_REPORT_COST = 3
+    HAP_REPORT_ECONOMIC = 4
+    HAP_REPORT_SENSITIVITY = 5
+    HAP_REPORT_TRANSFER = 6
+    HAP_REPORT_CALCULATOR = 7
+    HAP_REPORT_UTILITY = 8
+    HAP_REPORT_STREAMS = 9
+    HAP_REPORT_BALANCE = 10
+    HAP_REPORT_PRES_RELIEF = 11
+    HAP_REPORT_REGRESSION = 12
+    HAP_REPORT_REPORT = 13
+    HAP_REPORT_TOC = 14
+    HAP_REPORT_FLOWSHEET_BALANCE = 15
+    HAP_REPORT_PROP_TABLE = 16
+    HAP_REPORT_DESIGN_SPEC = 17
+    HAP_REPORT_CONNECTING_STREAMS = 18
+    HAP_REPORT_CONSTRAINT = 19
+    HAP_REPORT_OPTIMIZATION = 20
+
+[INTERFACE] IStream
+
+[INTERFACE] ISequentialStream
+
+[RECORD] LARGE_INTEGER
+
+[RECORD] ULARGE_INTEGER
+
+[RECORD] STATSTG
+
+[RECORD] FILETIME
+
+[INTERFACE] IParentAdviseSink  -- Parent Advise Sink interface.
+
+[DISPATCH] IHAPLibRef  -- Set/Query library references interfaces for AspenPlus.
+    [METHOD] QueryInterface(riid, ppvObj)
+    [METHOD] AddRef()
+    [METHOD] Release()
+    [METHOD] GetTypeInfoCount(pctinfo)
+    [METHOD] GetTypeInfo(itinfo, lcid, pptinfo)
+    [METHOD] GetIDsOfNames(riid, rgszNames, cNames, lcid, rgdispid)
+    [METHOD] Invoke(dispidMember, riid, lcid, wFlags, pdispparams, pvarResult, pexcepinfo, puArgErr)
+    [GET   ] CountLibs()
+    [GET   ] LibraryName(index)
+    [GET   ] LibraryPath(index)
+    [METHOD] InsertLibrary(path, location)
+    [METHOD] RemoveLibrary(location)
+    [METHOD] MoveLibrary(fromloc, toloc)
+    [GET   ] CategoryName(index)
+    [GET   ] CategorySelected(Name)
+    [PUT   ] CategorySelected(Name)
+    [GET   ] CategoryLocSelected(index)
+    [PUT   ] CategoryLocSelected(index)
+    [METHOD] MoveCategory(fromloc, toloc)
+    [METHOD] Enum(ppEnum)
+    [METHOD] SetLibraryActive(displayname)
+
+[INTERFACE] IEnumAModelLibrary  -- Enumerate model libraries
+
+[ENUM] HAPEXPType
+    HAPEXP_USRDEF = 0
+    HAPEXP_BACKUP = 1
+    HAPEXP_REPORT = 2
+    HAPEXP_SUMMARY = 3
+    HAPEXP_INPUT = 4
+    HAPEXP_INPUT_GRAPHICS = 5
+    HAPEXP_RUNMSG = 6
+    HAPEXP_REPORT_INPUT = 7
+    HAPEXP_REPORT_SUMMARY = 8
+    HAPEXP_FLOWDYN = 9
+    HAPEXP_PDYN = 10
+    HAPEXP_DXF = 11
+    HAPEXP_SUMXML = 12
+    HAPEXP_HISTORY = 13
+    HAPEXP_PFS = 14
+    HAPEXP_PDF = 15
+    HAPEXP_EOATSLV = 16
+    HAPEXP_EOATACT = 17
+    HAPEXP_INPUT_WITH_GRAPHICS = 18
+    HAPEXP_APRBACKUP = 19
+    HAPEXP_APRPDF = 20
+    HAPEXP_APRREPORT = 21
+    HAPEXP_ODI = 22
+    HAPEXP_EDITRUNINPUT = 23
+    HAPEXP_ADS_SUMMARY = 24
+    HAPEXP_APROPINPUT = 25
+
+[DISPATCH] IHNodeCol  -- Node collection for the ASPEN PLUS GUI data.
+    [METHOD] QueryInterface(riid, ppvObj)
+    [METHOD] AddRef()
+    [METHOD] Release()
+    [METHOD] GetTypeInfoCount(pctinfo)
+    [METHOD] GetTypeInfo(itinfo, lcid, pptinfo)
+    [METHOD] GetIDsOfNames(riid, rgszNames, cNames, lcid, rgdispid)
+    [METHOD] Invoke(dispidMember, riid, lcid, wFlags, pdispparams, pvarResult, pexcepinfo, puArgErr)
+    [GET   ] Application()
+    [GET   ] Parent()
+    [GET   ] Count()
+    [GET   ] RowCount(Dimension)
+    [GET   ] Dimension()
+    [GET   ] IsNamedDimension(Dimension)
+    [GET   ] Item(loc_or_name, loc_or_name2, loc_or_name3, loc_or_name4, loc_or_name5)
+    [GET   ] ItemName(location, Dimension, force)
+    [PUT   ] ItemName(location, Dimension, force)
+    [GET   ] Label(Dimension, location, force)
+    [PUT   ] Label(Dimension, location, force)
+    [GET   ] LabelNode(Dimension, location, Label)
+    [GET   ] LabelLocation(Label, Dimension)
+    [GET   ] LabelAttribute(Dimension, location, attrnum, force)
+    [PUT   ] LabelAttribute(Dimension, location, attrnum, force)
+    [GET   ] LabelAttributeType(Dimension, location, attrnum)
+    [GET   ] _NewEnum()
+    [METHOD] Add(loc_or_name, loc_or_name2, loc_or_name3, loc_or_name4, loc_or_name5)
+    [METHOD] Insert(element, loc_or_name, loc_or_name2, loc_or_name3, loc_or_name4, loc_or_name5)
+    [METHOD] Remove(loc_or_name, loc_or_name2, loc_or_name3, loc_or_name4, loc_or_name5)
+    [METHOD] InsertRow(Dimension, location)
+    [METHOD] RemoveRow(Dimension, location)
+    [GET   ] DimensionName(Dimension)
+    [METHOD] Reorder(loc_or_name, dir)
+    [GET   ] Values(force)
+
+[ENUM] HAPAttributeNumber
+    HAP_VALUE = 0
+    HAP_RESERVED1 = 1
+    HAP_UNITROW = 2
+    HAP_UNITCOL = 3
+    HAP_RESERVED2 = 4
+    HAP_OPTIONLIST = 5
+    HAP_RECORDTYPE = 6
+    HAP_ENTERABLE = 7
+    HAP_UPPERLIMIT = 8
+    HAP_LOWERLIMIT = 9
+    HAP_VALUEDEFAULT = 10
+    HAP_USERENTERED = 11
+    HAP_COMPSTATUS = 12
+    HAP_BASIS = 13
+    HAP_INOUT = 14
+    HAP_PORTSEX = 15
+    HAP_MULTIPORT = 16
+    HAP_PORTTYPE = 17
+    HAP_OUTVAR = 18
+    HAP_PROMPT = 19
+    HAP_PRETENDNOTENTERED = 20
+    HAP_HELPFILENAME = 21
+    HAP_HELPID = 22
+    HAP_FIRSTPAIR = 23
+    HAP_NODENAME = 24
+    HAP_METHOD = 25
+    HAP_MARKED = 26
+    HAP_VOLATILE = 27
+    HAP_SECTION = 28
+    HAP_DEFNAME = 29
+    HAP_CANADD = 30
+    HAP_CANDELETE = 31
+    HAP_CANRENAME = 32
+    HAP_CANHIDE = 33
+    HAP_CANREVEAL = 34
+    HAP_CANCLEAR = 35
+    HAP_CANCOPY = 36
+    HAP_CANPASTE = 37
+    HAP_HASCHILDREN = 38
+    HAP_PLOTLABEL = 39
+    HAP_BIRDCAGE = 40
+    HAP_STREAMCLASS = 42
+    HAP_HASCOMMENTS = 43
+    HAP_CANHAVECOMMENTS = 44
+    HAP_UNDERLYINGPATH = 45
+    HAP_ISHIDDEN = 47
+    HAP_HIDEVIEW = 48
+    HAP_ANALYSISFLAG = 49
+    HAP_SPECSTREAM = 50
+    HAP_REORDER = 51
+    HAP_ISREALSYMBOL = 52
+    HAP_CANEXPORT = 58
+    HAP_BASETYPE = 59
+    HAP_HIERARCHYFLAG = 63
+    HAP_HIERPATH = 64
+    HAP_FULLNAME = 65
+    HAP_CANTEMPLAPPEND = 66
+    HAP_ACTIVATESTATE = 67
+    HAP_CANIMPORT = 68
+    HAP_HASEOMSG = 69
+    HAP_SHOWEOMSG = 70
+    HAP_EOEXPORT = 72
+    HAP_EOIMPORT = 73
+    HAP_NAVPATH = 74
+    HAP_HIERNAME = 76
+    HAP_REVEALLIST = 77
+    HAP_DEFRECONCILE = 78
+    HAP_EONODENAME = 79
+    HAP_UOM = 81
+    HAP_UOMSET = 82
+
+[ENUM] HAPCompStatusCode
+    HAP_RESULTS_SUCCESS = 1
+    HAP_NORESULTS = 2
+    HAP_RESULTS_WARNINGS = 4
+    HAP_RESULTS_INACCESS = 8
+    HAP_RESULTS_INCOMPAT = 16
+    HAP_RESULTS_ERRORS = 32
+    HAP_INPUT_INCOMPLETE = 64
+    HAP_INPUT_COMPLETE = 128
+    HAP_INPUT_INACCESS = 256
+    HAP_INPUT_NEUTRAL = 512
+    HAP_UNRECONCILED = 1024
+    HAP_RECONCILED = 2048
+    HAP_DISABLED = 4096
+    HAP_ENABLED = 8192
+    HAP_EOSYNC = 16384
+    HAP_EOSYNC_WARNINGS = 32768
+    HAP_EOSYNC_ERRORS = 65536
+    HAP_EODISABLE = 2097152
+    HAP_EOFAIL = 262144
+    HAP_EOERROR = 524288
+    HAP_EOSYNC_UNSYNC = 1048576
+    HAP_NOT_RUN = 2097152
+
+[ENUM] HAPSpecialNodeType
+    HAP_SPECIAL_ANALYSIS = 0
+    HAP_SPECIAL_PURE = 1
+    HAP_SPECIAL_UNIGROUP = 2
+    HAP_SPECIAL_PSD = 3
+    HAP_SPECIAL_SUBOBJECT = 4
+    HAP_SPECIAL_STREAM = 5
+
+[DISPATCH] IAdsNode  -- Node object for ADS results data.
+    [METHOD] QueryInterface(riid, ppvObj)
+    [METHOD] AddRef()
+    [METHOD] Release()
+    [METHOD] GetTypeInfoCount(pctinfo)
+    [METHOD] GetTypeInfo(itinfo, lcid, pptinfo)
+    [METHOD] GetIDsOfNames(riid, rgszNames, cNames, lcid, rgdispid)
+    [METHOD] Invoke(dispidMember, riid, lcid, wFlags, pdispparams, pvarResult, pexcepinfo, puArgErr)
+    [GET   ] Elements()
+    [GET   ] Value(force)
+    [GET   ] UnitString(force)
+    [GET   ] unitrow(force)
+    [GET   ] Name(force)
+    [GET   ] ValueType()
+    [METHOD] FindNode(path)
+
+[DISPATCH] IAdsNodeCol  -- Node collection for Ads results data.
+    [METHOD] QueryInterface(riid, ppvObj)
+    [METHOD] AddRef()
+    [METHOD] Release()
+    [METHOD] GetTypeInfoCount(pctinfo)
+    [METHOD] GetTypeInfo(itinfo, lcid, pptinfo)
+    [METHOD] GetIDsOfNames(riid, rgszNames, cNames, lcid, rgdispid)
+    [METHOD] Invoke(dispidMember, riid, lcid, wFlags, pdispparams, pvarResult, pexcepinfo, puArgErr)
+    [GET   ] Item(loc_or_name, loc_or_name2, loc_or_name3, loc_or_name4, loc_or_name5)
+    [GET   ] Count()
+    [GET   ] Values(force)
+
+[DISPATCH] IScrollAreaInfo  -- Information about nodes in ScrollArea controls.
+    [METHOD] QueryInterface(riid, ppvObj)
+    [METHOD] AddRef()
+    [METHOD] Release()
+    [METHOD] GetTypeInfoCount(pctinfo)
+    [METHOD] GetTypeInfo(itinfo, lcid, pptinfo)
+    [METHOD] GetIDsOfNames(riid, rgszNames, cNames, lcid, rgdispid)
+    [METHOD] Invoke(dispidMember, riid, lcid, wFlags, pdispparams, pvarResult, pexcepinfo, puArgErr)
+    [GET   ] NodeAt(row, col, index)
+    [METHOD] GetMaximum(pRow, pRowExt, pCol, pColExt)
+
+[DISPATCH] IHPlotVal  -- PlotVal automation interface for the ASPEN PLUS GUI.
+    [METHOD] QueryInterface(riid, ppvObj)
+    [METHOD] AddRef()
+    [METHOD] Release()
+    [METHOD] GetTypeInfoCount(pctinfo)
+    [METHOD] GetTypeInfo(itinfo, lcid, pptinfo)
+    [METHOD] GetIDsOfNames(riid, rgszNames, cNames, lcid, rgdispid)
+    [METHOD] Invoke(dispidMember, riid, lcid, wFlags, pdispparams, pvarResult, pexcepinfo, puArgErr)
+    [PUT   ] Context()
+    [GET   ] Context()
+    [GET   ] Title()
+    [GET   ] TitleInt()
+    [PUT   ] Title()
+    [GET   ] XAxisTitle()
+    [GET   ] XAxisTitleInt()
+    [PUT   ] XAxisTitle()
+    [GET   ] YAxisTitle(nAxis)
+    [GET   ] YAxisTitleInt(nAxis)
+    [PUT   ] YAxisTitle(nAxis)
+    [GET   ] Label(index)
+    [GET   ] LabelInt(index)
+    [PUT   ] Label(index)
+    [GET   ] NPoints()
+    [PUT   ] NPoints()
+    [GET   ] NVariables()
+    [PUT   ] NVariables()
+    [GET   ] NXVariables()
+    [PUT   ] NXVariables()
+    [GET   ] XDataValue(index, datano)
+    [PUT   ] XData(index, datano, attr)
+    [GET   ] YDataValue(index, datano)
+    [PUT   ] YData(index, datano, attr)
+    [METHOD] GetXData(index, datano, attr, Value)
+    [METHOD] GetYData(index, datano, attr, Value)
+    [METHOD] Clear()
+    [GET   ] SwapAxises()
+    [PUT   ] SwapAxises()
+    [GET   ] ReverseXAxis()
+    [PUT   ] ReverseXAxis()
+    [GET   ] AddTimeStamp()
+    [PUT   ] AddTimeStamp()
+    [GET   ] ShowLegend()
+    [PUT   ] ShowLegend()
+    [GET   ] PlotType()
+    [PUT   ] PlotType()
+    [GET   ] Parametric()
+    [PUT   ] Parametric()
+    [GET   ] ZAxisTitle()
+    [GET   ] ZAxisTitleInt()
+    [PUT   ] ZAxisTitle()
+    [GET   ] Live()
+    [PUT   ] Live()
+    [METHOD] AddAnnotationText(text)
+    [GET   ] AnnotationCount()
+    [GET   ] AnnotationText(index)
+    [GET   ] GridType()
+    [PUT   ] GridType()
+    [GET   ] MarkerSize()
+    [PUT   ] MarkerSize()
+    [GET   ] ShowDiagonalLine()
+    [PUT   ] ShowDiagonalLine()
+    [GET   ] LineStyle()
+    [PUT   ] LineStyle()
+    [GET   ] XDataInteger(index)
+    [GET   ] ShowZeroLine()
+    [PUT   ] ShowZeroLine()
+    [GET   ] AxisMap(index)
+    [PUT   ] AxisMap(index)
+    [GET   ] CurveStyle(index)
+    [PUT   ] CurveStyle(index)
+    [METHOD] RemoveAnnotationText()
+    [GET   ] SquarePlot()
+    [PUT   ] SquarePlot()
+    [GET   ] CanLive()
+    [PUT   ] CanLive()
+    [GET   ] AxisScale(VarNo)
+    [PUT   ] AxisScale(VarNo)
+
+[RECORD] PLOTTEXT  -- Anotation Text for the plot.
+
+[DISPATCH] IHPlotVal2  -- PlotVal automation interface for the ASPEN PLUS GUI.
+    [METHOD] QueryInterface(riid, ppvObj)
+    [METHOD] AddRef()
+    [METHOD] Release()
+    [METHOD] GetTypeInfoCount(pctinfo)
+    [METHOD] GetTypeInfo(itinfo, lcid, pptinfo)
+    [METHOD] GetIDsOfNames(riid, rgszNames, cNames, lcid, rgdispid)
+    [METHOD] Invoke(dispidMember, riid, lcid, wFlags, pdispparams, pvarResult, pexcepinfo, puArgErr)
+    [PUT   ] Context()
+    [GET   ] Context()
+    [GET   ] Title()
+    [GET   ] TitleInt()
+    [PUT   ] Title()
+    [GET   ] XAxisTitle()
+    [GET   ] XAxisTitleInt()
+    [PUT   ] XAxisTitle()
+    [GET   ] YAxisTitle(nAxis)
+    [GET   ] YAxisTitleInt(nAxis)
+    [PUT   ] YAxisTitle(nAxis)
+    [GET   ] Label(index)
+    [GET   ] LabelInt(index)
+    [PUT   ] Label(index)
+    [GET   ] NPoints()
+    [PUT   ] NPoints()
+    [GET   ] NVariables()
+    [PUT   ] NVariables()
+    [GET   ] NXVariables()
+    [PUT   ] NXVariables()
+    [GET   ] XDataValue(index, datano)
+    [PUT   ] XData(index, datano, attr)
+    [GET   ] YDataValue(index, datano)
+    [PUT   ] YData(index, datano, attr)
+    [METHOD] GetXData(index, datano, attr, Value)
+    [METHOD] GetYData(index, datano, attr, Value)
+    [METHOD] Clear()
+    [GET   ] SwapAxises()
+    [PUT   ] SwapAxises()
+    [GET   ] ReverseXAxis()
+    [PUT   ] ReverseXAxis()
+    [GET   ] AddTimeStamp()
+    [PUT   ] AddTimeStamp()
+    [GET   ] ShowLegend()
+    [PUT   ] ShowLegend()
+    [GET   ] PlotType()
+    [PUT   ] PlotType()
+    [GET   ] Parametric()
+    [PUT   ] Parametric()
+    [GET   ] ZAxisTitle()
+    [GET   ] ZAxisTitleInt()
+    [PUT   ] ZAxisTitle()
+    [GET   ] Live()
+    [PUT   ] Live()
+    [METHOD] AddAnnotationText(text)
+    [GET   ] AnnotationCount()
+    [GET   ] AnnotationText(index)
+    [GET   ] GridType()
+    [PUT   ] GridType()
+    [GET   ] MarkerSize()
+    [PUT   ] MarkerSize()
+    [GET   ] ShowDiagonalLine()
+    [PUT   ] ShowDiagonalLine()
+    [GET   ] LineStyle()
+    [PUT   ] LineStyle()
+    [GET   ] XDataInteger(index)
+    [GET   ] ShowZeroLine()
+    [PUT   ] ShowZeroLine()
+    [GET   ] AxisMap(index)
+    [PUT   ] AxisMap(index)
+    [GET   ] CurveStyle(index)
+    [PUT   ] CurveStyle(index)
+    [METHOD] RemoveAnnotationText()
+    [GET   ] SquarePlot()
+    [PUT   ] SquarePlot()
+    [GET   ] CanLive()
+    [PUT   ] CanLive()
+    [GET   ] AxisScale(VarNo)
+    [PUT   ] AxisScale(VarNo)
+    [METHOD] GetVarLineInfo(iColor, iLineType, iMarker, iSize)
+    [PUT   ] VarLineInfo(iColor, iLineType, iMarker, iSize)
+    [GET   ] LineColor(index)
+    [PUT   ] LineColor(index)
+    [GET   ] LineType(index)
+    [PUT   ] LineType(index)
+    [GET   ] MarkerType(index)
+    [PUT   ] MarkerType(index)
+    [GET   ] MarkerSize(index)
+    [PUT   ] MarkerSize(index)
+
+[DISPATCH] IAPPDF  -- Aspen Plus PDF automation interface.
+    [METHOD] QueryInterface(riid, ppvObj)
+    [METHOD] AddRef()
+    [METHOD] Release()
+    [METHOD] GetTypeInfoCount(pctinfo)
+    [METHOD] GetTypeInfo(itinfo, lcid, pptinfo)
+    [METHOD] GetIDsOfNames(riid, rgszNames, cNames, lcid, rgdispid)
+    [METHOD] Invoke(dispidMember, riid, lcid, wFlags, pdispparams, pvarResult, pexcepinfo, puArgErr)
+    [METHOD] GetAPPDF(filename, flags)
+
+[DISPATCH] IHAPHandle  -- Aspen Plus GUI HANDLE interface
+    [METHOD] QueryInterface(riid, ppvObj)
+    [METHOD] AddRef()
+    [METHOD] Release()
+    [METHOD] GetTypeInfoCount(pctinfo)
+    [METHOD] GetTypeInfo(itinfo, lcid, pptinfo)
+    [METHOD] GetIDsOfNames(riid, rgszNames, cNames, lcid, rgdispid)
+    [METHOD] Invoke(dispidMember, riid, lcid, wFlags, pdispparams, pvarResult, pexcepinfo, puArgErr)
+    [GET   ] MainHWnd()
+    [GET   ] ProcessHandle()
+
+[DISPATCH] IAPropData  -- Aspen Plus physical properties data automation interface.
+    [METHOD] QueryInterface(riid, ppvObj)
+    [METHOD] AddRef()
+    [METHOD] Release()
+    [METHOD] GetTypeInfoCount(pctinfo)
+    [METHOD] GetTypeInfo(itinfo, lcid, pptinfo)
+    [METHOD] GetIDsOfNames(riid, rgszNames, cNames, lcid, rgdispid)
+    [METHOD] Invoke(dispidMember, riid, lcid, wFlags, pdispparams, pvarResult, pexcepinfo, puArgErr)
+    [METHOD] GetAvailableDatabanks(plNumDatabanks, pvtDatabankArray)
+    [METHOD] GetDefaultDatabanks(plNumDatabanks, pvtDatabankArray)
+    [METHOD] SetQueryForComponents(vtDatabanksArray, bstrMatchNameAlias, bMatchAlternate, bMatchStringBeginOnly, bstrCompClass, bstrCASRN, dblMWfrom, dblMWto, dblBPfrom, dblBPto, bstrBPUnit)
+    [METHOD] FetchNextComponent(bInit, bstrAlias, bstrName, dblBP, dblMW, bstrDatabank, bstrCASRN, bstrCompClass, bstrSynonym)
+
+[DISPATCH] IAPPasteItems  -- Marking interface.
+    [METHOD] QueryInterface(riid, ppvObj)
+    [METHOD] AddRef()
+    [METHOD] Release()
+    [METHOD] GetTypeInfoCount(pctinfo)
+    [METHOD] GetTypeInfo(itinfo, lcid, pptinfo)
+    [METHOD] GetIDsOfNames(riid, rgszNames, cNames, lcid, rgdispid)
+    [METHOD] Invoke(dispidMember, riid, lcid, wFlags, pdispparams, pvarResult, pexcepinfo, puArgErr)
+    [GET   ] Item(index)
+    [GET   ] Enum()
+    [GET   ] Count()
+
+[DISPATCH] IAPPasteItem  -- Marking interface.
+    [METHOD] QueryInterface(riid, ppvObj)
+    [METHOD] AddRef()
+    [METHOD] Release()
+    [METHOD] GetTypeInfoCount(pctinfo)
+    [METHOD] GetTypeInfo(itinfo, lcid, pptinfo)
+    [METHOD] GetIDsOfNames(riid, rgszNames, cNames, lcid, rgdispid)
+    [METHOD] Invoke(dispidMember, riid, lcid, wFlags, pdispparams, pvarResult, pexcepinfo, puArgErr)
+    [GET   ] displayname()
+    [PUT   ] ID()
+    [GET   ] ID()
+    [PUT   ] Deleted()
+    [GET   ] Deleted()
+    [GET   ] PathLen()
+    [GET   ] path(index)
+    [GET   ] HasChildren()
+    [GET   ] Items()
+
+[ENUM] HAPP_RECONCILE_CODE
+    HAPP_RECONCILE_INPUT = 1
+    HAPP_RECONCILE_ONLY = 2
+    HAPP_RECONCILE_TP = 4
+    HAPP_RECONCILE_TV = 8
+    HAPP_RECONCILE_PV = 16
+    HAPP_RECONCILE_CF = 32
+    HAPP_RECONCILE_TF = 64
+    HAPP_RECONCILE_MICFMOLE = 128
+    HAPP_RECONCILE_MICFMASS = 256
+    HAPP_RECONCILE_MICFSTDVOL = 512
+    HAPP_RECONCILE_MITFMOLE = 1024
+    HAPP_RECONCILE_MITFMASS = 2048
+    HAPP_RECONCILE_MITFSTDVOL = 4096
+    HAPP_RECONCILE_CICFMOLE = 16384
+    HAPP_RECONCILE_CICFMASS = 32768
+    HAPP_RECONCILE_CITFMOLE = 65536
+    HAPP_RECONCILE_CITFMASS = 131072
+    HAPP_RECONCILE_QUIET = 1048576
+    HAPP_RECONCILE_DONTASKWARN = 2097152
+    HAPP_RECONCILE_ONLYSTREAMS = 16777216
+    HAPP_RECONCILE_NOSTREAMS = 33554432
+    HAPP_RECONCILE_TEARSTREAMS = 67108864
+    HAPP_RECONCILE_FEEDSTREAMS = 4194304
+
+[ENUM] HAPP_ENABLE_CODE
+    HAPP_ENABLE_DEACTIVATE = 0
+    HAPP_ENABLE_ACTIVATE = 1
+    HAPP_ENABLE_NOT_APPLICABLE = 2
+
+[ENUM] SIM_CONTAINER_EVENT
+    SIM_EVENT_OBJECT_SOLVING = 1000
+    SIM_EVENT_OBJECT_DELETED = 1001
+    SIM_EVENT_SHOWDATABROWSER = 1002
+    SIM_EVENT_UPDATE_BROWSER = 1003
+    SIM_EVENT_UPDATE_STATUS = 1004
+    SIM_EVENT_REFRESH = 1005
+    SIM_SET_SEQUENCE = 1006
+    SIM_EVENT_WAIT_CURSOR = 1007
+    SIM_EVENT_CONNECTING = 1008
+    SIM_EVENT_STOPPOINT = 1009
+    SIM_EVENT_REMOVE_STOPPOINT = 1010
+    SIM_EVENT_REMOVEALL_STOPPOINT = 1011
+    SIM_EVENT_CLOSE = 1012
+    SIM_EVENT_VISIBLE = 1013
+    SIM_EVENT_AUTOMATION_OPEN = 1014
+    SIM_EVENT_SAVED = 1015
+    SIM_EVENT_SHOW_ITEM = 1016
+    SIM_EVENT_QUIT = 1017
+    SIM_START_PSV_ACTION = 1018
+    SIM_EVENT_PSV_ERROR_STATUS = 1019
+    SIM_EVENT_TRACKITEM = 1020
+    SIM_EVENT_STREAM_PROPERTY_CHANGE = 1021
+    SIM_EVENT_SHOWSTREAMPLOT = 1022
+    SIM_EVENT_ENTER_SAFETY = 1023
+
+[DISPATCH] IHNode2  -- Node object for the Aspen Plus GUI data.
+    [METHOD] QueryInterface(riid, ppvObj)
+    [METHOD] AddRef()
+    [METHOD] Release()
+    [METHOD] GetTypeInfoCount(pctinfo)
+    [METHOD] GetTypeInfo(itinfo, lcid, pptinfo)
+    [METHOD] GetIDsOfNames(riid, rgszNames, cNames, lcid, rgdispid)
+    [METHOD] Invoke(dispidMember, riid, lcid, wFlags, pdispparams, pvarResult, pexcepinfo, puArgErr)
+    [GET   ] Application()
+    [GET   ] Parent()
+    [GET   ] Name(force)
+    [PUT   ] Name(force)
+    [GET   ] Dimension()
+    [GET   ] ValueType()
+    [GET   ] Value(force)
+    [PUT   ] Value(force)
+    [METHOD] SetValueAndUnit(Value, unitcol, force)
+    [METHOD] SetValueUnitAndBasis(Value, unitcol, basis, force)
+    [GET   ] HasAttribute(attrnumber)
+    [GET   ] AttributeType(attrnumber)
+    [GET   ] AttributeValue(attrnumber, force)
+    [PUT   ] AttributeValue(attrnumber, force)
+    [GET   ] HasClassAttribute(classid)
+    [GET   ] ClassAttributeType(classid)
+    [GET   ] ClassAttributeValue(classid, force)
+    [PUT   ] ClassAttributeValue(classid, force)
+    [GET   ] Elements()
+    [GET   ] Process()
+    [METHOD] Delete()
+    [METHOD] RemoveAll()
+    [METHOD] AddClassAttribute(classid, type)
+    [METHOD] DeleteClassAttribute(classid)
+    [METHOD] Copy()
+    [METHOD] CopyWithFormat()
+    [METHOD] PrintUseful(append, filename)
+    [METHOD] FindNode(path)
+    [METHOD] Paste()
+    [METHOD] PasteSpecial()
+    [METHOD] IsLinked()
+    [METHOD] RemoveLink()
+    [METHOD] NextIncomplete(code)
+    [METHOD] BrowseNext(direction, io)
+    [METHOD] Dummy(__MIDL__IHNode0000, __MIDL__IHNode0001)
+    [METHOD] Hide(Name)
+    [METHOD] Reveal(Name)
+    [METHOD] Clear()
+    [METHOD] NotifyRunStep()
+    [METHOD] HoldNotifies(hold)
+    [METHOD] IsValid()
+    [METHOD] NewChild(Name)
+    [METHOD] RenameChild(Name)
+    [METHOD] IsSpecialType(type)
+    [METHOD] Reaquire()
+    [GET   ] UnitString()
+    [GET   ] ValueForUnit(unitrow, unitcol)
+    [METHOD] PFSSelectModel()
+    [METHOD] PFSClearSelection()
+    [METHOD] Reconcile(code)
+    [METHOD] NewID(Name)
+    [METHOD] Export(filename)
+    [METHOD] DoObjectVerb(oleverb)
+    [METHOD] AppendTemplate(pUnkTempl, flag)
+    [METHOD] Import(filename)
+    [PUT   ] RefreshOff()
+    [GET   ] SharedData()
+    [METHOD] Clear2(code)
+
+[ENUM] HASELTYPE
+    HASEL_UNDEFINED = -1
+    HASEL_CHNODE = 0
+    HASEL_SELECTION = 1
+    HASEL_LABEL = 2
+    HASEL_LABELNODE = 3
+    HASEL_VOLATILECHNODE = 4
+    HASEL_HEADERLABEL = 90
+    HASEL_LBTU_UNITS = 96
+    HASEL_LBTU_BASIS = 97
+    HASEL_LBTU_UNITS_BASIS = 98
+    HASEL_UNDERLYINGNODE = 99
+    HASEL_SELECT_INDIRECT = 100
+
+[INTERFACE] IHSelectionCallback  -- IHSelection delay loading interface
+
+[DISPATCH] IAPHappEvents  -- Notification of a warning or informational message.
+    [METHOD] OnDialogSuppressed(msg, result)
+    [METHOD] OnControlPanelMessage(Clear, msg)
+    [METHOD] OnGUIClosing()
+    [METHOD] OnInClosing(Clear, msg)
+    [METHOD] OnDataChanged(pObj)
+    [METHOD] OnUpdateMessage(msg_code, msg_hint, msg_object, source_handle)
+    [METHOD] OnEngineCommandCompleted()
+    [METHOD] OnBeforeCalculate(IsStep, Cancel)
+    [METHOD] OnBeforeSave(filename, Cancel)
+    [METHOD] OnCalculationCompleted()
+    [METHOD] OnCalculationStopped()
+    [METHOD] OnGUIClosed()
+    [METHOD] OnDocumentClosing()
+
+[COCLASS] HappLS  -- Aspen Plus 41.0 GUI Automation Server
+
+[COCLASS] HappIP  -- Aspen Plus 41.0 GUI In Process Automation Server
+
+[DISPATCH] IHComposite  -- Composite Node for the ASPEN PLUS GUI.
+    [METHOD] QueryInterface(riid, ppvObj)
+    [METHOD] AddRef()
+    [METHOD] Release()
+    [METHOD] GetTypeInfoCount(pctinfo)
+    [METHOD] GetTypeInfo(itinfo, lcid, pptinfo)
+    [METHOD] GetIDsOfNames(riid, rgszNames, cNames, lcid, rgdispid)
+    [METHOD] Invoke(dispidMember, riid, lcid, wFlags, pdispparams, pvarResult, pexcepinfo, puArgErr)
+    [METHOD] AddChild(Name, child)
+    [METHOD] RemoveChild(Name)
+    [METHOD] GetChild(index)
+    [METHOD] GetChildName(index)
+    [GET   ] ChildCount()
+    [METHOD] DumpToDataBase(filename, tablename, create)
+
+[COCLASS] CHReadOnlyCompositeNode  -- ReadOnly Composition Class
+
+[COCLASS] CHReadWriteCompositeNode  -- ReadWrite Composition Class
+
+[COCLASS] CHPlotVal  -- PlotVal Class
+
+[DISPATCH] IHWizardPlot  -- Plot Wizard automation interface for the ASPEN PLUS GUI.
+    [METHOD] QueryInterface(riid, ppvObj)
+    [METHOD] AddRef()
+    [METHOD] Release()
+    [METHOD] GetTypeInfoCount(pctinfo)
+    [METHOD] GetTypeInfo(itinfo, lcid, pptinfo)
+    [METHOD] GetIDsOfNames(riid, rgszNames, cNames, lcid, rgdispid)
+    [METHOD] Invoke(dispidMember, riid, lcid, wFlags, pdispparams, pvarResult, pexcepinfo, puArgErr)
+    [GET   ] PlotVal()
+    [GET   ] basis()
+    [PUT   ] basis()
+    [GET   ] unitrow(curve)
+    [PUT   ] unitrow(curve)
+    [GET   ] unitcol(curve)
+    [PUT   ] unitcol(curve)
+    [METHOD] SetIndependentVariable(pContext, indepvar)
+    [METHOD] AddDependentVariable(pContext, depvar)
+    [METHOD] RemoveDependentVariable(pContext, depvar)
+    [METHOD] RemoveAllDependentVariable()
+    [GET   ] HasDependentVariable(pContext, depvar)
+    [METHOD] AddVariablePair(pContext, indepvar, depvar, sort)
+    [GET   ] WizardData(Step)
+    [PUT   ] WizardData(Step)
+    [METHOD] Clear()
+    [GET   ] ErrorNumber()
+    [PUT   ] ErrorStatus(index)
+    [PUT   ] RefreshCallBack()
+    [GET   ] RefreshCallBack()
+    [METHOD] GetIndependentVariable(indepvar)
+    [METHOD] GetDependentVariable(depvar)
+    [METHOD] GetPlotList(plots)
+    [PUT   ] AddToPlot()
+    [GET   ] AddToPlot()
+    [GET   ] XUnitRow()
+    [GET   ] XUnitCol()
+    [PUT   ] XUnitCol()
+
+[DISPATCH] IHWizardPlot2  -- Plot Wizard automation interface for the ASPEN PLUS GUI.
+    [METHOD] QueryInterface(riid, ppvObj)
+    [METHOD] AddRef()
+    [METHOD] Release()
+    [METHOD] GetTypeInfoCount(pctinfo)
+    [METHOD] GetTypeInfo(itinfo, lcid, pptinfo)
+    [METHOD] GetIDsOfNames(riid, rgszNames, cNames, lcid, rgdispid)
+    [METHOD] Invoke(dispidMember, riid, lcid, wFlags, pdispparams, pvarResult, pexcepinfo, puArgErr)
+    [GET   ] PlotVal()
+    [GET   ] basis()
+    [PUT   ] basis()
+    [GET   ] unitrow(curve)
+    [PUT   ] unitrow(curve)
+    [GET   ] unitcol(curve)
+    [PUT   ] unitcol(curve)
+    [METHOD] SetIndependentVariable(pContext, indepvar)
+    [METHOD] AddDependentVariable(pContext, depvar)
+    [METHOD] RemoveDependentVariable(pContext, depvar)
+    [METHOD] RemoveAllDependentVariable()
+    [GET   ] HasDependentVariable(pContext, depvar)
+    [METHOD] AddVariablePair(pContext, indepvar, depvar, sort)
+    [GET   ] WizardData(Step)
+    [PUT   ] WizardData(Step)
+    [METHOD] Clear()
+    [GET   ] ErrorNumber()
+    [PUT   ] ErrorStatus(index)
+    [PUT   ] RefreshCallBack()
+    [GET   ] RefreshCallBack()
+    [METHOD] GetIndependentVariable(indepvar)
+    [METHOD] GetDependentVariable(depvar)
+    [METHOD] GetPlotList(plots)
+    [PUT   ] AddToPlot()
+    [GET   ] AddToPlot()
+    [GET   ] XUnitRow()
+    [GET   ] XUnitCol()
+    [PUT   ] XUnitCol()
+    [METHOD] SetMultIndependentVariables(pContext, indepvar)
+    [METHOD] RemoveIndependentVariable(pContext, indepvar, index)
+    [METHOD] RemoveAllIndependentVariable()
+
+[COCLASS] CHWizardPlot  -- Aspen Plus 41.0 WizardPlot Class
+
+[INTERFACE] IPersistStream
+
+[INTERFACE] IPersist
+
+[DISPATCH] IHAdhocPlot  -- Adhoc Plot automation interface for the ASPEN PLUS GUI.
+    [METHOD] QueryInterface(riid, ppvObj)
+    [METHOD] AddRef()
+    [METHOD] Release()
+    [METHOD] GetTypeInfoCount(pctinfo)
+    [METHOD] GetTypeInfo(itinfo, lcid, pptinfo)
+    [METHOD] GetIDsOfNames(riid, rgszNames, cNames, lcid, rgdispid)
+    [METHOD] Invoke(dispidMember, riid, lcid, wFlags, pdispparams, pvarResult, pexcepinfo, puArgErr)
+    [GET   ] PlotVal()
+    [METHOD] ReadyToPlot()
+    [METHOD] SetIndependentVariable()
+    [METHOD] SetDependentVariable()
+    [METHOD] SetParametricVariable()
+    [METHOD] Refresh()
+
+[COCLASS] CHAdhocPlot  -- Aspen Plus 41.0 AdhocPlot Class
+
+[DISPATCH] IMMControlVerb  -- MMControl DoVerb automation interface for the ASPEN PLUS GUI.
+    [METHOD] QueryInterface(riid, ppvObj)
+    [METHOD] AddRef()
+    [METHOD] Release()
+    [METHOD] GetTypeInfoCount(pctinfo)
+    [METHOD] GetTypeInfo(itinfo, lcid, pptinfo)
+    [METHOD] GetIDsOfNames(riid, rgszNames, cNames, lcid, rgdispid)
+    [METHOD] Invoke(dispidMember, riid, lcid, wFlags, pdispparams, pvarResult, pexcepinfo, puArgErr)
+    [METHOD] EnumVerbs(pEnumOleVerb)
+    [METHOD] DoVerb(iVerb)
+
+[COCLASS] HappAProp  -- Aspen Properties 41.0 GUI Automation Server
+
+[COCLASS] HappAPropIP  -- Aspen Properties 41.0 GUI In Process Automation Server
+
+[COCLASS] CHAdhocPlotAProp  -- Aspen Properties 41.0 AdhocPlot Class
+
+[COCLASS] CHWizardPlotAProp  -- Aspen Properties 41.0 WizardPlot Class
+
+[DISPATCH] IHappServiceProvider  -- Acts as the factory method for any services exposed through an implementation of IServiceProvider.
+    [METHOD] QueryInterface(riid, ppvObj)
+    [METHOD] AddRef()
+    [METHOD] Release()
+    [METHOD] GetTypeInfoCount(pctinfo)
+    [METHOD] GetTypeInfo(itinfo, lcid, pptinfo)
+    [METHOD] GetIDsOfNames(riid, rgszNames, cNames, lcid, rgdispid)
+    [METHOD] Invoke(dispidMember, riid, lcid, wFlags, pdispparams, pvarResult, pexcepinfo, puArgErr)
+    [METHOD] GetService(bService)
+
+[ENUM] IAP_CONFLICT_OPTION
+    IAP_CONF_UNKNOWN = -1
+    IAP_CONF_NOACTION = 0
+    IAP_CONF_REPLACE = 2
+    IAP_CONF_MERGE = 3
+    IAP_CONF_HIDE = 4
+
+[DISPATCH] IAPConflict  -- Marking interface.
+    [METHOD] QueryInterface(riid, ppvObj)
+    [METHOD] AddRef()
+    [METHOD] Release()
+    [METHOD] GetTypeInfoCount(pctinfo)
+    [METHOD] GetTypeInfo(itinfo, lcid, pptinfo)
+    [METHOD] GetIDsOfNames(riid, rgszNames, cNames, lcid, rgdispid)
+    [METHOD] Invoke(dispidMember, riid, lcid, wFlags, pdispparams, pvarResult, pexcepinfo, puArgErr)
+    [GET   ] displayname()
+    [PUT   ] ID()
+    [GET   ] ID()
+    [PUT   ] Merge()
+    [GET   ] Merge()
+    [PUT   ] Action()
+    [GET   ] Action()
+
+[DISPATCH] IAPConflicts  -- Marking interface.
+    [METHOD] QueryInterface(riid, ppvObj)
+    [METHOD] AddRef()
+    [METHOD] Release()
+    [METHOD] GetTypeInfoCount(pctinfo)
+    [METHOD] GetTypeInfo(itinfo, lcid, pptinfo)
+    [METHOD] GetIDsOfNames(riid, rgszNames, cNames, lcid, rgdispid)
+    [METHOD] Invoke(dispidMember, riid, lcid, wFlags, pdispparams, pvarResult, pexcepinfo, puArgErr)
+    [METHOD] Item(index)
+    [GET   ] Enum()
+    [METHOD] Clear()
+    [GET   ] Count()
+
+[DISPATCH] IAPGroup  -- Marking interface.
+    [METHOD] QueryInterface(riid, ppvObj)
+    [METHOD] AddRef()
+    [METHOD] Release()
+    [METHOD] GetTypeInfoCount(pctinfo)
+    [METHOD] GetTypeInfo(itinfo, lcid, pptinfo)
+    [METHOD] GetIDsOfNames(riid, rgszNames, cNames, lcid, rgdispid)
+    [METHOD] Invoke(dispidMember, riid, lcid, wFlags, pdispparams, pvarResult, pexcepinfo, puArgErr)
+    [METHOD] Clear()
+    [METHOD] Add(Item)
+    [METHOD] Remove(Item)
+    [METHOD] Item(index)
+    [GET   ] _NewEnum()
+    [GET   ] Count()
+    [GET   ] DataObject()
+    [METHOD] Export(filename)
+    [METHOD] CopyToClipboard()
+
+[DISPATCH] IAPPasteParam  -- Marking interface.
+    [METHOD] QueryInterface(riid, ppvObj)
+    [METHOD] AddRef()
+    [METHOD] Release()
+    [METHOD] GetTypeInfoCount(pctinfo)
+    [METHOD] GetTypeInfo(itinfo, lcid, pptinfo)
+    [METHOD] GetIDsOfNames(riid, rgszNames, cNames, lcid, rgdispid)
+    [METHOD] Invoke(dispidMember, riid, lcid, wFlags, pdispparams, pvarResult, pexcepinfo, puArgErr)
+    [GET   ] ID()
+    [PUT   ] Label()
+    [GET   ] Label()
+    [PUT   ] Value()
+    [GET   ] Value()
+
+[DISPATCH] IAPPasteParams  -- Marking interface.
+    [METHOD] QueryInterface(riid, ppvObj)
+    [METHOD] AddRef()
+    [METHOD] Release()
+    [METHOD] GetTypeInfoCount(pctinfo)
+    [METHOD] GetTypeInfo(itinfo, lcid, pptinfo)
+    [METHOD] GetIDsOfNames(riid, rgszNames, cNames, lcid, rgdispid)
+    [METHOD] Invoke(dispidMember, riid, lcid, wFlags, pdispparams, pvarResult, pexcepinfo, puArgErr)
+    [GET   ] Item(index)
+    [GET   ] Enum()
+    [GET   ] Count()
+
+[DISPATCH] IAPPasteBuffer  -- Marking interface.
+    [METHOD] QueryInterface(riid, ppvObj)
+    [METHOD] AddRef()
+    [METHOD] Release()
+    [METHOD] GetTypeInfoCount(pctinfo)
+    [METHOD] GetTypeInfo(itinfo, lcid, pptinfo)
+    [METHOD] GetIDsOfNames(riid, rgszNames, cNames, lcid, rgdispid)
+    [METHOD] Invoke(dispidMember, riid, lcid, wFlags, pdispparams, pvarResult, pexcepinfo, puArgErr)
+    [GET   ] Items()
+    [GET   ] Params()
+    [GET   ] Conflicts()
+    [PUT   ] Context()
+    [METHOD] Import(filename)
+    [METHOD] Export(filename)
+    [METHOD] Commit(force, errorLog)
+
+[DISPATCH] IHNodeSelection  -- Functions for accessing large amounts of data from an IHNode or collection of IHNodes
+    [METHOD] QueryInterface(riid, ppvObj)
+    [METHOD] AddRef()
+    [METHOD] Release()
+    [METHOD] GetTypeInfoCount(pctinfo)
+    [METHOD] GetTypeInfo(itinfo, lcid, pptinfo)
+    [METHOD] GetIDsOfNames(riid, rgszNames, cNames, lcid, rgdispid)
+    [METHOD] Invoke(dispidMember, riid, lcid, wFlags, pdispparams, pvarResult, pexcepinfo, puArgErr)
+    [METHOD] Select(nodePath)
+    [METHOD] SelectNodes(nodePath)
+    [METHOD] SelectValues(nodePath)
+    [METHOD] SelectAttributes(nodePath, attributes)
+    [METHOD] SelectLabelAttributes(nodePath, Dimension, attributes)
+    [METHOD] SelectSingleNodeAttributes(nodePath, attributes)
+    [METHOD] SelectAttributesOnNodes(nodePathArray, attributes)
+
+[INTERFACE] IHappConnectInfo  -- Connection information service.  Obtained using IHappServiceProvider::GetService('HappConnectInfo'). Cast IHapp to IHappServiceProvider to get the service provider object.
+
+[INTERFACE] IHWinApp  -- Application Sink interface for Happ
+
+[RECORD] SAFEARRAY
+
+[RECORD] SAFEARRAYBOUND
+
+[ALIAS] wireHWND
+
+[RECORD] RemotableHandle
+
+[UNION] __MIDL_IWinTypes_0009
+
+[INTERFACE] IHSimContainer64  -- Simulation container callback for simdll engine control and communication
+
+[INTERFACE] IStorage
+
+[ALIAS] wireSNB
+
+[RECORD] RemSNB
+
+[INTERFACE] IEnumSTATSTG
+
+[INTERFACE] IHSafety
