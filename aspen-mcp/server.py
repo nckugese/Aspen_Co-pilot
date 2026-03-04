@@ -62,6 +62,17 @@ def save_simulation(session_name: str, file_path: str = None) -> str:
     return main_tools.save_simulation(manager, session_name, file_path)
 
 
+@mcp.tool()
+def list_node_children(session_name: str, aspen_path: str) -> str:
+    """List all child elements of a node in the Aspen Plus data tree.
+
+    Use this to explore the tree structure.
+    Example paths: '\\Data\\Properties\\Parameters', '\\Data\\Blocks'
+    """
+    return main_tools.list_node_children(manager, session_name, aspen_path)
+
+
+
 # ==================================================================
 # Flowsheet tools (5)
 # ==================================================================
