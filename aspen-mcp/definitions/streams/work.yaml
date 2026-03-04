@@ -1,0 +1,20 @@
+category: streams/work
+stream_type: WORK
+description: Work stream properties
+properties:
+- name: power
+  aspen_path: \Data\Streams\{stream_name}\Input\POWER
+  type: float
+  description: Power
+- name: speed
+  aspen_path: \Data\Streams\{stream_name}\Input\SPEED
+  type: float
+  description: Rotational speed
+- name: output_power
+  aspen_path: \Data\Streams\{stream_name}\Output\POWER_OUT
+  type: float
+  description: Calculated power output
+- name: output_speed
+  aspen_path: \Data\Streams\{stream_name}\Output\SPEED_OUT
+  type: float
+  description: Calculated rotational speed

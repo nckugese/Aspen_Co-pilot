@@ -1,0 +1,28 @@
+category: streams/heat
+stream_type: HEAT
+description: Heat stream properties
+properties:
+- name: duty
+  aspen_path: \Data\Streams\{stream_name}\Input\DUTY
+  type: float
+  description: Heat duty
+- name: temperature
+  aspen_path: \Data\Streams\{stream_name}\Input\TEMP
+  type: float
+  description: Stream temperature
+- name: end_temperature
+  aspen_path: \Data\Streams\{stream_name}\Input\TEND
+  type: float
+  description: End temperature
+- name: output_duty
+  aspen_path: \Data\Streams\{stream_name}\Output\QCALC
+  type: float
+  description: Calculated heat duty
+- name: output_start_temperature
+  aspen_path: \Data\Streams\{stream_name}\Output\TBEGIN
+  type: float
+  description: Output start temperature
+- name: output_end_temperature
+  aspen_path: \Data\Streams\{stream_name}\Output\TEND
+  type: float
+  description: Output end temperature

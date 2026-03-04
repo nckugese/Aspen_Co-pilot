@@ -1,0 +1,31 @@
+category: blocks/mixer
+block_type: Mixer
+description: "Stream mixer block"
+ports:
+  - name: "F(IN)"
+    description: "Feed inlet"
+  - name: "P(OUT)"
+    description: "Product outlet"
+  - name: "HS(IN)"
+    description: "Heat stream inlet"
+  - name: "WS(IN)"
+    description: "Work stream inlet"
+  - name: "PS(IN)"
+    description: "Pressure stream inlet"
+  - name: "HS(OUT)"
+    description: "Heat stream outlet"
+  - name: "WS(OUT)"
+    description: "Work stream outlet"
+  - name: "PS(OUT)"
+    description: "Pressure stream outlet"
+  - name: "WD(OUT)"
+    description: "Water decant outlet"
+properties:
+  - name: PRES
+    aspen_path: "\\Data\\Blocks\\{block_name}\\Input\\PRES"
+    type: float
+    description: "Specified pressure"
+  - name: T_EST
+    aspen_path: "\\Data\\Blocks\\{block_name}\\Input\\T_EST"
+    type: float
+    description: "Temperature estimate"

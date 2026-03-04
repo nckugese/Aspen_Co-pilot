@@ -6,6 +6,8 @@ No dynamic activation/deactivation — every tool is always available.
 
 from __future__ import annotations
 
+import os
+
 from mcp.server.fastmcp import FastMCP
 
 from aspen_manager import AspenPlusManager
@@ -13,6 +15,7 @@ from searcher import DefinitionSearcher
 from tools import main_tools, flowsheet_tools, block_tools, stream_tools, create_tools
 from tools.properties_tools import get_property_method as _get_prop, set_property_method as _set_prop, add_component as _add_comp
 from searcher.tool_searcher import search_properties as _search_props
+from searcher.discover_ports import discover_ports as _discover_ports
 
 # ------------------------------------------------------------------
 # Core objects
@@ -20,7 +23,9 @@ from searcher.tool_searcher import search_properties as _search_props
 
 mcp = FastMCP(name="aspen-plus")
 manager = AspenPlusManager()
-searcher = DefinitionSearcher()
+
+SGXML_DIR = os.environ.get("ASPEN_SGXML_DIR", None)
+searcher = DefinitionSearcher(sgxml_dir=SGXML_DIR)
 
 # ==================================================================
 # Main tools (5)
@@ -225,6 +230,33 @@ def search_properties(query: str) -> str:
     Use search_properties to find available block_type and property_name values.
     """
     return _search_props(searcher, query)
+
+
+# ==================================================================
+# Discovery tool (1)
+# ==================================================================
+
+@mcp.tool()
+def discover_ports(session_name: str) -> str:
+    """Auto-discover block ports for all known block types via COM API.
+
+    Places a temporary block of each type, reads its ports, removes it,
+    and saves results to block_ports.json. Requires an active Aspen session
+    (preferably a blank simulation).
+    """
+    try:
+        results, errors = _discover_ports(manager, session_name, SGXML_DIR)
+        searcher.reload()
+        summary_lines = [f"Discovered ports for {len(results)} block types:"]
+        for bt, ports in sorted(results.items()):
+            summary_lines.append(f"  {bt}: {', '.join(ports) if ports else '(none)'}")
+        if errors:
+            summary_lines.append(f"\nFailed for {len(errors)} block types:")
+            for err in errors:
+                summary_lines.append(f"  {err}")
+        return "\n".join(summary_lines)
+    except Exception as exc:
+        return f"Port discovery failed: {exc}"
 
 
 # ==================================================================

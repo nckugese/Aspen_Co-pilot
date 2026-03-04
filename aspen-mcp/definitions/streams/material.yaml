@@ -30,4 +30,3 @@ properties:
   aspen_path: \Data\Streams\{stream_name}\Output\MOLEFLOW\MIXED\{component}
   type: float
   description: Output component mole flow rate
--

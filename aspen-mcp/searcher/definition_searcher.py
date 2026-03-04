@@ -1,14 +1,20 @@
-"""Core lookup engine — loads YAML definitions and resolves Aspen COM paths."""
+"""Core lookup engine — loads SGXML + YAML definitions and resolves Aspen COM paths."""
 
 from __future__ import annotations
 
 import difflib
+import json
+import logging
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 import yaml
+
+from .sgxml_loader import load_all_sgxml
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -31,7 +37,7 @@ def _definitions_dir() -> Path:
 class DefinitionSearcher:
     """In-memory index of all block/stream YAML definitions."""
 
-    def __init__(self) -> None:
+    def __init__(self, sgxml_dir: str | None = None) -> None:
         # block_type (lower) -> {property_name -> {aspen_path, type, description}}
         self._blocks: dict[str, dict[str, dict[str, Any]]] = {}
         # stream_type (lower) -> {property_name -> {aspen_path, type, description}}
@@ -39,6 +45,7 @@ class DefinitionSearcher:
         # raw metadata per block/stream type
         self._block_meta: dict[str, dict[str, Any]] = {}
         self._stream_meta: dict[str, dict[str, Any]] = {}
+        self._sgxml_dir = sgxml_dir
         self.load_all()
 
     # ------------------------------------------------------------------
@@ -46,12 +53,71 @@ class DefinitionSearcher:
     # ------------------------------------------------------------------
 
     def load_all(self) -> None:
-        """Scan definitions/ and load every block/stream YAML into memory."""
+        """Load all definitions: SGXML first (blocks), then YAML overlays."""
         self._blocks.clear()
         self._streams.clear()
         self._block_meta.clear()
         self._stream_meta.clear()
 
+        self._load_sgxml()  # Phase 1: SGXML (blocks only, ~53 types)
+        self._load_yaml()   # Phase 2: YAML overlays (blocks + streams)
+
+    def _load_sgxml(self) -> None:
+        """Load block definitions from SGXML files, then merge discovered ports."""
+        sgxml_blocks = load_all_sgxml(self._sgxml_dir)
+
+        for key, parsed in sgxml_blocks.items():
+            block_type_display = parsed["block_type"]
+            properties = parsed["properties"]
+
+            # Strip read_only from property dicts for the _blocks store
+            prop_map: dict[str, dict[str, Any]] = {}
+            for prop_name, info in properties.items():
+                prop_map[prop_name] = {
+                    "aspen_path": info["aspen_path"],
+                    "type": info["type"],
+                    "description": info["description"],
+                }
+
+            self._blocks[key] = prop_map
+            self._block_meta[key] = {
+                "block_type": block_type_display,
+                "description": "",
+                "ports": [],
+            }
+
+        # Merge discovered ports from block_ports.json (if it exists)
+        self._load_discovered_ports()
+
+    def _load_discovered_ports(self) -> None:
+        """Load auto-discovered port names from block_ports.json."""
+        ports_json = Path(__file__).resolve().parent / "block_ports.json"
+        if not ports_json.is_file():
+            return
+
+        try:
+            data = json.loads(ports_json.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError) as exc:
+            logger.warning("Failed to load block_ports.json: %s", exc)
+            return
+
+        for block_type, port_names in data.items():
+            key = block_type.lower()
+            meta = self._block_meta.get(key)
+            if meta is None:
+                # Block type from ports JSON but not in SGXML — create entry
+                meta = {"block_type": block_type, "description": "", "ports": []}
+                self._block_meta[key] = meta
+                self._blocks.setdefault(key, {})
+
+            # Only set ports if not already populated (YAML will override later)
+            if not meta["ports"]:
+                meta["ports"] = [{"name": p} for p in port_names]
+
+        logger.info("Loaded discovered ports for %d block types from %s", len(data), ports_json)
+
+    def _load_yaml(self) -> None:
+        """Load YAML definitions, merging into existing SGXML data for blocks."""
         defs = _definitions_dir()
         for yaml_path in sorted(defs.rglob("*.yaml")):
             if yaml_path.name.startswith("_"):
@@ -67,19 +133,32 @@ class DefinitionSearcher:
 
             if block_type:
                 key = block_type.lower()
-                self._block_meta[key] = {
+
+                # Merge metadata: YAML description/ports override empty SGXML values
+                existing_meta = self._block_meta.get(key, {
                     "block_type": block_type,
-                    "description": data.get("description", ""),
-                    "ports": data.get("ports", []),
-                }
-                prop_map: dict[str, dict[str, Any]] = {}
+                    "description": "",
+                    "ports": [],
+                })
+                yaml_desc = data.get("description", "")
+                yaml_ports = data.get("ports", [])
+                if yaml_desc:
+                    existing_meta["description"] = yaml_desc
+                if yaml_ports:
+                    existing_meta["ports"] = yaml_ports
+                # Always prefer YAML's block_type casing
+                existing_meta["block_type"] = block_type
+                self._block_meta[key] = existing_meta
+
+                # Merge properties: YAML wins on name conflict
+                existing_props = self._blocks.get(key, {})
                 for p in props:
-                    prop_map[p["name"]] = {
+                    existing_props[p["name"]] = {
                         "aspen_path": p["aspen_path"],
                         "type": p.get("type", "string"),
                         "description": p.get("description", ""),
                     }
-                self._blocks[key] = prop_map
+                self._blocks[key] = existing_props
 
             elif stream_type:
                 key = stream_type.lower()
@@ -87,7 +166,7 @@ class DefinitionSearcher:
                     "stream_type": stream_type,
                     "description": data.get("description", ""),
                 }
-                prop_map = {}
+                prop_map: dict[str, dict[str, Any]] = {}
                 for p in props:
                     prop_map[p["name"]] = {
                         "aspen_path": p["aspen_path"],
