@@ -51,7 +51,7 @@ def list_aspen_sessions() -> str:
 
 @mcp.tool()
 def reinit_simulation(session_name: str) -> str:
-    """Reinitialize the simulation in a given session"""
+    """Reinitialize the block solver in a given session"""
     return main_tools.reinit_simulation(manager, session_name)
 
 
@@ -70,7 +70,7 @@ def save_simulation(session_name: str, file_path: str = None) -> str:
 @mcp.tool()
 def check_inputs(session_name: str) -> str:
     """Check if all required inputs are complete before running.
-
+    
     Walks the data tree to find all incomplete input nodes.
     Call this before run_simulation to ensure nothing is missing.
     """
