@@ -63,8 +63,6 @@ def save_simulation(manager, session_name: str, file_path: str = None) -> str:
         return f"Failed to save session '{session_name}'. Error: {exc}"
 
 
-<<<<<<< Updated upstream
-=======
 def check_inputs(manager, session_name: str) -> str:
     """Check if all required inputs are complete before running.
 
@@ -131,7 +129,6 @@ def set_node_value(manager, session_name: str, aspen_path: str, value) -> str:
     return manager.set_node_value(session_name, aspen_path, value)
 
 
->>>>>>> Stashed changes
 def list_node_children(manager, session_name: str, aspen_path: str) -> str:
     """List all child elements of a node in the Aspen Plus data tree."""
     app = manager.get_app(session_name)
@@ -150,7 +147,18 @@ def list_node_children(manager, session_name: str, aspen_path: str) -> str:
             name = child.Name
             try:
                 val = child.Value
-                children.append(f"  {name} = {val}")
+                if val is None:
+                    # Check if this node has sub-children (table data)
+                    try:
+                        sub = child.Elements
+                        if sub is not None and sub.Count > 0:
+                            children.append(f"  {name} = [table, {sub.Count} entries]")
+                        else:
+                            children.append(f"  {name} = None")
+                    except Exception:
+                        children.append(f"  {name} = None")
+                else:
+                    children.append(f"  {name} = {val}")
             except Exception:
                 children.append(f"  {name}/")
         return f"Children of '{aspen_path}' ({els.Count}):\n" + "\n".join(children)

@@ -16,11 +16,9 @@ def get_property_method(manager, session_name: str) -> str:
 
 def set_property_method(manager, session_name: str, method: str = "NRTL") -> str:
     """Set the global property method (e.g. NRTL, UNIQUAC, PENG-ROB, IDEAL)."""
-    return manager.set_node_value(
+    result = manager.set_node_value(
         session_name, r"\Data\Properties\Specifications\Input\GOPSETNAME", method
     )
-<<<<<<< Updated upstream
-=======
     # Auto-load binary interaction params from databank
     # After setting the property method, Aspen creates parameter nodes but
     # doesn't automatically retrieve databank values (e.g. NRTL-1).
@@ -49,7 +47,6 @@ def set_property_method(manager, session_name: str, method: str = "NRTL") -> str
         except Exception:
             pass
     return result
->>>>>>> Stashed changes
 
 
 def add_component(manager, session_name: str, component_id: str) -> str:

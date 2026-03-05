@@ -68,8 +68,6 @@ def save_simulation(session_name: str, file_path: str = None) -> str:
 
 
 @mcp.tool()
-<<<<<<< Updated upstream
-=======
 def check_inputs(session_name: str) -> str:
     """Check if all required inputs are complete before running.
 
@@ -100,7 +98,6 @@ def set_node_value(session_name: str, aspen_path: str, value: str) -> str:
 
 
 @mcp.tool()
->>>>>>> Stashed changes
 def list_node_children(session_name: str, aspen_path: str) -> str:
     """List all child elements of a node in the Aspen Plus data tree.
 
