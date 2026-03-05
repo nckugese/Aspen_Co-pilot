@@ -119,6 +119,16 @@ def check_inputs(manager, session_name: str) -> str:
         return f"Error checking inputs: {exc}"
 
 
+def get_node_value(manager, session_name: str, aspen_path: str) -> str:
+    """Read a raw value from the Aspen Plus data tree."""
+    return manager.get_node_value(session_name, aspen_path)
+
+
+def set_node_value(manager, session_name: str, aspen_path: str, value) -> str:
+    """Write a raw value to the Aspen Plus data tree."""
+    return manager.set_node_value(session_name, aspen_path, value)
+
+
 def list_node_children(manager, session_name: str, aspen_path: str) -> str:
     """List all child elements of a node in the Aspen Plus data tree."""
     app = manager.get_app(session_name)
@@ -138,7 +148,6 @@ def list_node_children(manager, session_name: str, aspen_path: str) -> str:
             try:
                 val = child.Value
                 if val is None:
-                    # Check if this node has sub-children (table data)
                     try:
                         sub = child.Elements
                         if sub is not None and sub.Count > 0:

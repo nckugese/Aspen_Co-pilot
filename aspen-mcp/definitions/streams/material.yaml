@@ -18,6 +18,10 @@ properties:
   aspen_path: \Data\Streams\{stream_name}\Input\VFRAC\MIXED
   type: float
   description: Vapor fraction
+- name: flow_basis
+  aspen_path: \Data\Streams\{stream_name}\Input\FLOWBASE
+  type: string
+  description: Flow basis (MOLE or MASS)
 - name: component_flow
   aspen_path: \Data\Streams\{stream_name}\Input\FLOW\MIXED\{component}
   type: float

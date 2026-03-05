@@ -31,12 +31,19 @@ def set_property_method(manager, session_name: str, method: str = "NRTL") -> str
             app.Reconcile(1 | 1048576 | 2097152)
         except Exception:
             pass
+        # Reconcile ALL binary interaction parameter sets, not just NRTL-1
         try:
-            n = app.Tree.FindNode(
-                r"\Data\Properties\Parameters\Binary Interaction\NRTL-1\Input"
+            bi_node = app.Tree.FindNode(
+                r"\Data\Properties\Parameters\Binary Interaction"
             )
-            if n is not None:
-                n.Reconcile(1)
+            if bi_node is not None:
+                for i in range(bi_node.Elements.Count):
+                    try:
+                        inp = bi_node.Elements.Item(i).Elements("Input")
+                        if inp is not None:
+                            inp.Reconcile(1)
+                    except Exception:
+                        pass
         except Exception:
             pass
     return result

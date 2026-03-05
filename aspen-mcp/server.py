@@ -78,6 +78,26 @@ def check_inputs(session_name: str) -> str:
 
 
 @mcp.tool()
+def get_node_value(session_name: str, aspen_path: str) -> str:
+    """Read a raw value from the Aspen Plus data tree by path.
+
+    Use list_node_children to explore available paths first.
+    Example: '\\Data\\Blocks\\HEATER1\\Input\\TEMP'
+    """
+    return main_tools.get_node_value(manager, session_name, aspen_path)
+
+
+@mcp.tool()
+def set_node_value(session_name: str, aspen_path: str, value: str) -> str:
+    """Write a raw value to the Aspen Plus data tree by path.
+
+    Use list_node_children to explore available paths first.
+    Example: set_node_value(session, '\\Data\\Blocks\\HEATER1\\Input\\TEMP', '100')
+    """
+    return main_tools.set_node_value(manager, session_name, aspen_path, value)
+
+
+@mcp.tool()
 def list_node_children(session_name: str, aspen_path: str) -> str:
     """List all child elements of a node in the Aspen Plus data tree.
 
