@@ -1,6 +1,6 @@
 """Aspen Plus MCP Server — entry point.
 
-All 18 tools are registered directly via @mcp.tool().
+All tools are registered directly via @mcp.tool().
 No dynamic activation/deactivation — every tool is always available.
 """
 
@@ -88,13 +88,23 @@ def get_node_value(session_name: str, aspen_path: str) -> str:
 
 
 @mcp.tool()
-def set_node_value(session_name: str, aspen_path: str, value: str) -> str:
+def set_node_value(session_name: str, aspen_path: str, value: str, unit: str = None) -> str:
     """Write a raw value to the Aspen Plus data tree by path.
 
     Use list_node_children to explore available paths first.
     Example: set_node_value(session, '\\Data\\Blocks\\HEATER1\\Input\\TEMP', '100')
+    Optionally specify unit (e.g. 'atm', 'C', 'bar') to set value with unit conversion.
     """
-    return main_tools.set_node_value(manager, session_name, aspen_path, value)
+    return main_tools.set_node_value(manager, session_name, aspen_path, value, unit=unit)
+
+
+@mcp.tool()
+def get_node_unit_info(session_name: str, aspen_path: str) -> str:
+    """Get unit information for a node: current unit, dimension, and all available units.
+
+    Example: get_node_unit_info(session, '\\Data\\Blocks\\COMP\\Input\\PRES')
+    """
+    return main_tools.get_node_unit_info(manager, session_name, aspen_path)
 
 
 @mcp.tool()
@@ -204,14 +214,16 @@ def set_block_value(
     property_name: str,
     value: str,
     extra_params: dict | None = None,
+    unit: str = None,
 ) -> str:
     """Set a property value on an Aspen Plus block.
 
     Use search_properties to find available block_type and property_name values.
     extra_params is for properties with additional placeholders (e.g. {"stream_name": "FEED"} for feed_stage).
+    Optionally specify unit (e.g. 'atm', 'C', 'bar') to set value with unit conversion.
     """
     return block_tools.set_block_value(
-        manager, searcher, session_name, block_name, block_type, property_name, value, extra_params
+        manager, searcher, session_name, block_name, block_type, property_name, value, extra_params, unit=unit
     )
 
 
@@ -245,14 +257,16 @@ def set_stream_value(
     property_name: str,
     value: str,
     extra_params: dict | None = None,
+    unit: str = None,
 ) -> str:
     """Set a property value on an Aspen Plus stream.
 
     Use search_properties to find available stream_type and property_name values.
     extra_params is for properties with additional placeholders (e.g. {"component": "WATER"}).
+    Optionally specify unit (e.g. 'atm', 'C', 'bar') to set value with unit conversion.
     """
     return stream_tools.set_stream_value(
-        manager, searcher, session_name, stream_name, stream_type, property_name, value, extra_params
+        manager, searcher, session_name, stream_name, stream_type, property_name, value, extra_params, unit=unit
     )
 
 

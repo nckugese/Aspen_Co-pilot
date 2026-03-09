@@ -1,6 +1,9 @@
 import os
 import win32com.client
+import win32com.client.dynamic
 import pythoncom
+
+from searcher import unit_table
 
 
 class AspenPlusManager:
@@ -54,7 +57,7 @@ class AspenPlusManager:
         pythoncom.CoInitialize()
 
         try:
-            aspen = win32com.client.Dispatch("Apwn.Document")
+            aspen = win32com.client.dynamic.Dispatch("Apwn.Document")
             aspen.InitFromFile2(file_path)
             aspen.Visible = True
             self._sessions[name] = aspen
@@ -114,12 +117,24 @@ class AspenPlusManager:
             if node is None:
                 return f"Node not found: {aspen_path}"
             value = node.Value
-            return str(value) if value is not None else f"Node '{aspen_path}' has no value."
+            if value is None:
+                return f"Node '{aspen_path}' has no value."
+            # Append unit string if the node has one
+            try:
+                unit_str = node.UnitString
+                if unit_str:
+                    return f"{value} (unit: {unit_str})"
+            except Exception:
+                pass
+            return str(value)
         except Exception as exc:
             return f"Error reading '{aspen_path}': {exc}"
 
-    def set_node_value(self, session_name: str, aspen_path: str, value) -> str:
-        """Write a value to the Aspen Plus simulation tree."""
+    def set_node_value(self, session_name: str, aspen_path: str, value, unit: str = None) -> str:
+        """Write a value to the Aspen Plus simulation tree.
+
+        If *unit* is provided, uses SetValueAndUnit to set both value and unit.
+        """
         app = self.get_app(session_name)
         if app is None:
             return f"No active session named '{session_name}'."
@@ -127,7 +142,62 @@ class AspenPlusManager:
             node = app.Tree.FindNode(aspen_path)
             if node is None:
                 return f"Node not found: {aspen_path}"
-            node.Value = value
-            return f"Set '{aspen_path}' = {value}"
+
+            if unit is not None:
+                # Look up unitcol from the unit table
+                unitcol = unit_table.lookup_unit(unit)
+                if unitcol is None:
+                    return f"Unknown unit '{unit}'. Use get_node_unit_info to see available units."
+                node.SetValueAndUnit(float(value), unitcol, False)
+                # Read back for confirmation
+                try:
+                    confirmed_unit = node.UnitString
+                    return f"Set '{aspen_path}' = {value} {confirmed_unit}"
+                except Exception:
+                    return f"Set '{aspen_path}' = {value} (unit: {unit})"
+            else:
+                node.Value = value
+                return f"Set '{aspen_path}' = {value}"
         except Exception as exc:
             return f"Error writing '{aspen_path}': {exc}"
+
+    def get_node_unit_info(self, session_name: str, aspen_path: str) -> str:
+        """Return unit information for a node: current unit, dimension, and available units."""
+        app = self.get_app(session_name)
+        if app is None:
+            return f"No active session named '{session_name}'."
+        try:
+            node = app.Tree.FindNode(aspen_path)
+            if node is None:
+                return f"Node not found: {aspen_path}"
+
+            try:
+                unit_str = node.UnitString
+            except Exception:
+                return f"Node '{aspen_path}' has no unit information."
+
+            if not unit_str:
+                return f"Node '{aspen_path}' has no unit information."
+
+            # Find dimension from current unit string
+            dim_row = unit_table.find_dimension_by_unit(unit_str)
+            if dim_row is None:
+                return (
+                    f"Current unit: {unit_str}\n"
+                    f"(Dimension not found in unit table for '{unit_str}')"
+                )
+
+            dim_name = unit_table.dimension_name(dim_row)
+            available = unit_table.list_units_for_dimension(dim_row)
+
+            lines = [
+                f"Current unit: {unit_str}",
+                f"Dimension: {dim_name} (row {dim_row})",
+                f"Available units ({len(available)}):",
+            ]
+            for i, u in enumerate(available):
+                marker = " <-- current" if u.lower() == unit_str.lower() else ""
+                lines.append(f"  [{i}] {u}{marker}")
+            return "\n".join(lines)
+        except Exception as exc:
+            return f"Error reading unit info for '{aspen_path}': {exc}"

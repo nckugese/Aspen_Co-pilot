@@ -40,6 +40,7 @@ def set_block_value(
     property_name: str,
     value,
     extra_params: dict | None = None,
+    unit: str = None,
 ) -> str:
     """Write a property on an Aspen block.
 
@@ -51,4 +52,4 @@ def set_block_value(
 
     hint = f"[Note: {result.message}]\n" if result.message else ""
     aspen_path = result.value.format(block_name=block_name, **(extra_params or {}))
-    return hint + str(manager.set_node_value(session_name, aspen_path, value))
+    return hint + str(manager.set_node_value(session_name, aspen_path, value, unit=unit))

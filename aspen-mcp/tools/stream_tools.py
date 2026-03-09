@@ -40,6 +40,7 @@ def set_stream_value(
     property_name: str,
     value,
     extra_params: dict | None = None,
+    unit: str = None,
 ) -> str:
     """Write a property on an Aspen stream.
 
@@ -51,4 +52,4 @@ def set_stream_value(
 
     hint = f"[Note: {result.message}]\n" if result.message else ""
     aspen_path = result.value.format(stream_name=stream_name, **(extra_params or {}))
-    return hint + str(manager.set_node_value(session_name, aspen_path, value))
+    return hint + str(manager.set_node_value(session_name, aspen_path, value, unit=unit))
