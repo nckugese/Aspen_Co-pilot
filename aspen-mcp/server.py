@@ -12,7 +12,7 @@ from mcp.server.fastmcp import FastMCP
 
 from aspen_manager import AspenPlusManager
 from searcher import DefinitionSearcher
-from tools import main_tools, flowsheet_tools, block_tools, stream_tools, create_tools
+from tools import main_tools, flowsheet_tools, value_tools, create_tools
 from tools.properties_tools import get_property_method as _get_prop, set_property_method as _set_prop, add_component as _add_comp, remove_component as _rm_comp
 from searcher.tool_searcher import search_properties as _search_props
 from searcher.discover_ports import discover_ports as _discover_ports
@@ -102,24 +102,95 @@ def check_inputs(session_name: str) -> str:
 
 
 @mcp.tool()
-def get_node_value(session_name: str, aspen_path: str) -> str:
-    """Read a raw value from the Aspen Plus data tree by path.
+def get_value(
+    session_name: str,
+    aspen_path: str = None,
+    block_name: str = None,
+    block_type: str = None,
+    stream_name: str = None,
+    stream_type: str = None,
+    property_name: str = None,
+    extra_params: dict = None,
+) -> str:
+    """Read a value from Aspen Plus. Three ways to specify the target:
 
-    Use list_node_children to explore available paths first.
-    Example: '\\Data\\Blocks\\HEATER1\\Input\\TEMP'
+    1. Direct path:  get_value(session, aspen_path='\\Data\\Blocks\\B1\\Input\\TEMP')
+    2. Block lookup:  get_value(session, block_name='B1', block_type='RadFrac', property_name='reflux_ratio')
+    3. Stream lookup: get_value(session, stream_name='S1', stream_type='MATERIAL', property_name='temperature')
+
+    Use search_properties to find available block_type/stream_type and property_name values.
     """
-    return main_tools.get_node_value(manager, session_name, aspen_path)
+    return value_tools.get_value(
+        manager, searcher, session_name,
+        aspen_path=aspen_path,
+        block_name=block_name, block_type=block_type,
+        stream_name=stream_name, stream_type=stream_type,
+        property_name=property_name, extra_params=extra_params,
+    )
 
 
 @mcp.tool()
-def set_node_value(session_name: str, aspen_path: str, value: str, unit: str = None) -> str:
-    """Write a raw value to the Aspen Plus data tree by path.
+def set_value(
+    session_name: str,
+    value: str = None,
+    unit: str = None,
+    basis: str = None,
+    aspen_path: str = None,
+    block_name: str = None,
+    block_type: str = None,
+    stream_name: str = None,
+    stream_type: str = None,
+    property_name: str = None,
+    extra_params: dict = None,
+) -> str:
+    """Set a value in Aspen Plus. Three ways to specify the target:
 
-    Use list_node_children to explore available paths first.
-    Example: set_node_value(session, '\\Data\\Blocks\\HEATER1\\Input\\TEMP', '100')
-    Optionally specify unit (e.g. 'atm', 'C', 'bar') to set value with unit conversion.
+    1. Direct path:  set_value(session, aspen_path='...', value='100', unit='C')
+    2. Block lookup:  set_value(session, block_name='B1', block_type='RadFrac', property_name='reflux_ratio', value='1.5')
+    3. Stream lookup: set_value(session, stream_name='S1', stream_type='MATERIAL', property_name='temperature', value='80', unit='C')
+
+    Smart dispatch — provide only what you want to change:
+      - value only:  changes the numeric value (keeps current unit & basis)
+      - unit only:   changes the unit (keeps current value & basis)
+      - basis only:  changes the basis, e.g. 'MASS' or 'MOLE'
+      - any combination: changes all specified fields at once
+
+    Uses SetValueUnitAndBasis under the hood for unit/basis changes.
     """
-    return main_tools.set_node_value(manager, session_name, aspen_path, value, unit=unit)
+    return value_tools.set_value(
+        manager, searcher, session_name,
+        value=value, unit=unit, basis=basis,
+        aspen_path=aspen_path,
+        block_name=block_name, block_type=block_type,
+        stream_name=stream_name, stream_type=stream_type,
+        property_name=property_name, extra_params=extra_params,
+    )
+
+
+@mcp.tool()
+def get_node_attribute(session_name: str, aspen_path: str, attribute: str) -> str:
+    """Read an attribute from a node by attribute name or number.
+
+    Known attributes: VALUE(0), UNITROW(2), UNITCOL(3), OPTIONLIST(5),
+    RECORDTYPE(6), ENTERABLE(7), UPPERLIMIT(8), LOWERLIMIT(9),
+    VALUEDEFAULT(10), USERENTERED(11), COMPSTATUS(12), BASIS(13),
+    INOUT(14), PROMPT(19).
+
+    Example: get_node_attribute(session, '\\Data\\Streams\\FEED\\Input\\FLOW', 'BASIS')
+    """
+    return main_tools.get_node_attribute(manager, session_name, aspen_path, attribute)
+
+
+@mcp.tool()
+def set_node_attribute(session_name: str, aspen_path: str, attribute: str, value: str) -> str:
+    """Write an attribute on a node by attribute name or number.
+
+    Use this to change basis, unit settings, or other node attributes
+    without changing the node's value. Works on container nodes too.
+
+    Example: set_node_attribute(session, '\\Data\\Streams\\FEED\\Input\\FLOW', 'BASIS', 'Mass-Flow')
+    """
+    return main_tools.set_node_attribute(manager, session_name, aspen_path, attribute, value)
 
 
 @mcp.tool()
@@ -208,90 +279,6 @@ def remove_component(session_name: str, component_id: str) -> str:
     return _rm_comp(manager, session_name, component_id)
 
 
-# ==================================================================
-# Block tools (2)
-# ==================================================================
-
-@mcp.tool()
-def get_block_value(
-    session_name: str,
-    block_name: str,
-    block_type: str,
-    property_name: str,
-    extra_params: dict | None = None,
-) -> str:
-    """Get a property value from an Aspen Plus block.
-
-    Use search_properties to find available block_type and property_name values.
-    extra_params is for properties with additional placeholders (e.g. {"stream_name": "FEED"} for feed_stage).
-    """
-    return block_tools.get_block_value(
-        manager, searcher, session_name, block_name, block_type, property_name, extra_params
-    )
-
-
-@mcp.tool()
-def set_block_value(
-    session_name: str,
-    block_name: str,
-    block_type: str,
-    property_name: str,
-    value: str,
-    extra_params: dict | None = None,
-    unit: str = None,
-) -> str:
-    """Set a property value on an Aspen Plus block.
-
-    Use search_properties to find available block_type and property_name values.
-    extra_params is for properties with additional placeholders (e.g. {"stream_name": "FEED"} for feed_stage).
-    Optionally specify unit (e.g. 'atm', 'C', 'bar') to set value with unit conversion.
-    """
-    return block_tools.set_block_value(
-        manager, searcher, session_name, block_name, block_type, property_name, value, extra_params, unit=unit
-    )
-
-
-# ==================================================================
-# Stream tools (2)
-# ==================================================================
-
-@mcp.tool()
-def get_stream_value(
-    session_name: str,
-    stream_name: str,
-    stream_type: str,
-    property_name: str,
-    extra_params: dict | None = None,
-) -> str:
-    """Get a property value from an Aspen Plus stream.
-
-    Use search_properties to find available stream_type and property_name values.
-    extra_params is for properties with additional placeholders (e.g. {"component": "WATER"}).
-    """
-    return stream_tools.get_stream_value(
-        manager, searcher, session_name, stream_name, stream_type, property_name, extra_params
-    )
-
-
-@mcp.tool()
-def set_stream_value(
-    session_name: str,
-    stream_name: str,
-    stream_type: str,
-    property_name: str,
-    value: str,
-    extra_params: dict | None = None,
-    unit: str = None,
-) -> str:
-    """Set a property value on an Aspen Plus stream.
-
-    Use search_properties to find available stream_type and property_name values.
-    extra_params is for properties with additional placeholders (e.g. {"component": "WATER"}).
-    Optionally specify unit (e.g. 'atm', 'C', 'bar') to set value with unit conversion.
-    """
-    return stream_tools.set_stream_value(
-        manager, searcher, session_name, stream_name, stream_type, property_name, value, extra_params, unit=unit
-    )
 
 
 # ==================================================================

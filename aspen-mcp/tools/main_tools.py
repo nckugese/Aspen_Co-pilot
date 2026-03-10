@@ -334,14 +334,24 @@ def get_node_value(manager, session_name: str, aspen_path: str) -> str:
     return manager.get_node_value(session_name, aspen_path)
 
 
-def set_node_value(manager, session_name: str, aspen_path: str, value, unit: str = None) -> str:
+def set_node_value(manager, session_name: str, aspen_path: str, value=None, unit: str = None, basis: str = None) -> str:
     """Write a raw value to the Aspen Plus data tree."""
-    return manager.set_node_value(session_name, aspen_path, value, unit=unit)
+    return manager.set_node_value(session_name, aspen_path, value=value, unit=unit, basis=basis)
 
 
 def get_node_unit_info(manager, session_name: str, aspen_path: str) -> str:
     """Return unit information for a node."""
     return manager.get_node_unit_info(session_name, aspen_path)
+
+
+def get_node_attribute(manager, session_name: str, aspen_path: str, attribute) -> str:
+    """Read an attribute from a node."""
+    return manager.get_node_attribute(session_name, aspen_path, attribute)
+
+
+def set_node_attribute(manager, session_name: str, aspen_path: str, attribute, value) -> str:
+    """Write an attribute on a node."""
+    return manager.set_node_attribute(session_name, aspen_path, attribute, value)
 
 
 def list_node_children(manager, session_name: str, aspen_path: str) -> str:
