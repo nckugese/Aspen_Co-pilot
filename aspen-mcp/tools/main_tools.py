@@ -13,6 +13,50 @@ def open_aspen_plus(manager, file_path: str) -> str:
     return manager.open_with_file(file_path)
 
 
+# Path to the blank simulation template bundled with the MCP
+_BLANK_TEMPLATE = os.path.join(os.path.dirname(__file__), "..", "..", "Blank_Simulation.bkp")
+
+
+def create_new_simulation(manager, project_name: str, destination_folder: str = None) -> str:
+    """Create a new Aspen Plus simulation by copying the blank template.
+
+    Copies Blank_Simulation.bkp to <destination_folder>/<project_name>.bkp
+    and opens it. If destination_folder is not provided, uses the same
+    directory as the blank template.
+    """
+    import shutil
+
+    template = os.path.abspath(_BLANK_TEMPLATE)
+    if not os.path.exists(template):
+        return f"Blank template not found at {template}. Cannot create new simulation."
+
+    # Sanitize project name — strip .bkp if user included it
+    name = project_name.strip()
+    if name.lower().endswith(".bkp"):
+        name = name[:-4]
+
+    if destination_folder:
+        dest_dir = os.path.abspath(destination_folder)
+    else:
+        dest_dir = os.path.dirname(template)
+
+    if not os.path.isdir(dest_dir):
+        return f"Destination folder does not exist: {dest_dir}"
+
+    dest_path = os.path.join(dest_dir, f"{name}.bkp")
+    if os.path.exists(dest_path):
+        return f"File already exists: {dest_path}. Open it with open_aspen_plus or choose a different name."
+
+    try:
+        shutil.copy2(template, dest_path)
+    except Exception as exc:
+        return f"Failed to copy template: {exc}"
+
+    # Open the new simulation
+    result = manager.open_with_file(dest_path)
+    return f"Created new simulation: {dest_path}\n{result}"
+
+
 def close_aspen_plus(manager, session_name: str = None) -> str:
     """Close an Aspen Plus session."""
     return manager.close(session_name)
@@ -62,9 +106,155 @@ def run_simulation(manager, session_name: str) -> str:
                 pass  # If status check fails, fall through to try running
 
         app.Run2()
-        return f"Simulation '{session_name}' run completed."
+
+        # Auto-check run status; only dig deeper if there are issues
+        run_status = _check_run_status(app)
+
+        msg = f"Simulation '{session_name}' run completed."
+        if run_status:
+            msg += "\n\n" + run_status
+            msg += "\n\n" + _check_block_errors(app)
+            convergence_report = _check_loop_convergence(app)
+            if convergence_report:
+                msg += "\n\n" + convergence_report
+        return msg
     except Exception as exc:
         return f"Failed to run simulation '{session_name}'. Error: {exc}"
+
+
+def _check_run_status(app) -> str:
+    """Check simulation-level run status from Results Summary."""
+    try:
+        per_node = app.Tree.FindNode(
+            r"\Data\Results Summary\Run-Status\Output\PER_ERROR"
+        )
+        if per_node is None:
+            return ""
+        els = per_node.Elements
+        if els.Count == 0:
+            return ""
+
+        lines = []
+        for i in range(els.Count):
+            val = els.Item(i).Value
+            if val is not None and str(val).strip():
+                lines.append(str(val).strip())
+
+        if not lines:
+            return ""
+        return "Run status message:\n  " + "\n  ".join(lines)
+    except Exception:
+        return ""
+
+
+def _check_block_errors(app) -> str:
+    """Check BLKSTAT and PER_ERROR for all blocks after a run."""
+    try:
+        blocks_node = app.Tree.FindNode(r"\Data\Blocks")
+        if blocks_node is None:
+            return ""
+        els = blocks_node.Elements
+        if els.Count == 0:
+            return ""
+
+        errors = []
+        for i in range(els.Count):
+            block = els.Item(i)
+            block_name = block.Name
+            try:
+                stat_node = app.Tree.FindNode(
+                    rf"\Data\Blocks\{block_name}\Output\BLKSTAT"
+                )
+                if stat_node is None or stat_node.Value is None:
+                    continue
+                blkstat = stat_node.Value
+                if blkstat == 0:
+                    continue  # OK
+
+                # Get short message
+                msg_node = app.Tree.FindNode(
+                    rf"\Data\Blocks\{block_name}\Output\BLKMSG"
+                )
+                blkmsg = msg_node.Value if msg_node is not None and msg_node.Value else ""
+
+                # Get detailed error from PER_ERROR
+                per_node = app.Tree.FindNode(
+                    rf"\Data\Blocks\{block_name}\Output\PER_ERROR"
+                )
+                detail = ""
+                if per_node is not None:
+                    per_els = per_node.Elements
+                    if per_els.Count > 0:
+                        detail_lines = []
+                        for j in range(per_els.Count):
+                            detail_lines.append(str(per_els.Item(j).Value))
+                        detail = "\n    ".join(detail_lines)
+
+                entry = f"  {block_name}: {blkmsg}"
+                if detail:
+                    entry += f"\n    {detail}"
+                errors.append(entry)
+            except Exception:
+                continue
+
+        if not errors:
+            return ""
+        return "Block errors:\n" + "\n".join(errors)
+    except Exception:
+        return ""
+
+
+def _check_loop_convergence(app) -> str:
+    """Check convergence status for all loop solvers after a run.
+
+    Uses ROWSTAT3 for the official status, and shows the last 5 ERR_TOL2
+    values so the user can see the trend.
+    """
+    try:
+        conv_node = app.Tree.FindNode(r"\Data\Convergence\Convergence")
+        if conv_node is None:
+            return ""
+        els = conv_node.Elements
+        if els.Count == 0:
+            return ""
+
+        lines = ["Loop convergence summary:"]
+        for i in range(els.Count):
+            solver = els.Item(i)
+            solver_name = solver.Name
+            try:
+                # Official convergence status
+                status_node = app.Tree.FindNode(
+                    rf"\Data\Convergence\Convergence\{solver_name}\Output\ROWSTAT3"
+                )
+                status = status_node.Value if status_node is not None else "UNKNOWN"
+
+                # Total iterations
+                iter_node = app.Tree.FindNode(
+                    rf"\Data\Convergence\Convergence\{solver_name}\Output\TOT_ITER"
+                )
+                tot_iter = iter_node.Value if iter_node is not None else "?"
+
+                # Last 5 ERR_TOL2 values for trend
+                err_node = app.Tree.FindNode(
+                    rf"\Data\Convergence\Convergence\{solver_name}\Output\ERR_TOL2"
+                )
+                tail_str = ""
+                if err_node is not None:
+                    err_els = err_node.Elements
+                    n = err_els.Count
+                    if n > 0:
+                        start = max(0, n - 5)
+                        tail = [err_els.Item(j).Value for j in range(start, n)]
+                        tail_str = " | last errors: [" + ", ".join(f"{v:.4g}" for v in tail) + "]"
+
+                lines.append(f"  {solver_name}: {status} in {tot_iter} iterations{tail_str}")
+            except Exception:
+                lines.append(f"  {solver_name}: could not read convergence data")
+
+        return "\n".join(lines) if len(lines) > 1 else ""
+    except Exception:
+        return ""
 
 
 def save_simulation(manager, session_name: str, file_path: str = None) -> str:

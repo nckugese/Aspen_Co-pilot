@@ -24,17 +24,41 @@ from searcher.discover_ports import discover_ports as _discover_ports
 mcp = FastMCP(name="aspen-plus")
 manager = AspenPlusManager()
 
+# ------------------------------------------------------------------
+# Knowledge base resource
+# ------------------------------------------------------------------
+
+_KNOWLEDGE_BASE_PATH = os.path.join(os.path.dirname(__file__), "knowledge", "knowledge_base.md")
+
+
+@mcp.resource("knowledge://aspen-plus/knowledge-base")
+def get_knowledge_base() -> str:
+    """Aspen Plus knowledge base — tips, gotchas, and patterns for using the COM API via MCP."""
+    with open(_KNOWLEDGE_BASE_PATH, "r", encoding="utf-8") as f:
+        return f.read()
+
 SGXML_DIR = os.environ.get("ASPEN_SGXML_DIR", None)
 searcher = DefinitionSearcher(sgxml_dir=SGXML_DIR)
 
 # ==================================================================
-# Main tools (5)
+# Main tools (6)
 # ==================================================================
 
 @mcp.tool()
 def open_aspen_plus(file_path: str) -> str:
     """Open Aspen Plus and load a .bkp simulation file"""
     return main_tools.open_aspen_plus(manager, file_path)
+
+
+@mcp.tool()
+def create_new_simulation(project_name: str, destination_folder: str = None) -> str:
+    """Create a new Aspen Plus simulation from the blank template.
+
+    Copies Blank_Simulation.bkp to <destination_folder>/<project_name>.bkp and opens it.
+    Use this when starting a brand new project instead of opening an existing file.
+    If destination_folder is omitted, the file is created next to the blank template.
+    """
+    return main_tools.create_new_simulation(manager, project_name, destination_folder)
 
 
 @mcp.tool()
