@@ -151,3 +151,72 @@ def remove_component(manager, session_name: str, component_id: str) -> str:
         return f"Component '{component_id}' removed."
     except Exception as exc:
         return f"Failed to remove component '{component_id}': {exc}"
+
+
+# ------------------------------------------------------------------
+# Side duty helpers (RadFrac HEATER_DUTY)
+# ------------------------------------------------------------------
+
+
+def add_side_duty(
+    manager, session_name: str, block_name: str, stage: int, duty: float
+) -> str:
+    """Add or update a side duty (HEATER_DUTY) on a RadFrac stage.
+
+    Uses manager.ensure_node to create the table row if it doesn't exist.
+
+    Args:
+        block_name: RadFrac block name (e.g. 'STRIP').
+        stage:      Stage number (integer).
+        duty:       Heat duty value in current unit (e.g. cal/sec).
+    """
+    path = rf"\Data\Blocks\{block_name}\Input\HEATER_DUTY\{stage}"
+    try:
+        node = manager.ensure_node(session_name, path)
+        if node is None:
+            return (
+                f"Failed to create HEATER_DUTY node for block '{block_name}' "
+                f"stage {stage}. Is it a RadFrac block?"
+            )
+        node.Value = duty
+        return (
+            f"Added HEATER_DUTY on block '{block_name}' "
+            f"stage {stage} = {duty}."
+        )
+    except Exception as exc:
+        return f"Failed to add side duty on '{block_name}' stage {stage}: {exc}"
+
+
+def remove_side_duty(
+    manager, session_name: str, block_name: str, stage: int
+) -> str:
+    """Remove a side duty entry from a RadFrac stage.
+
+    Args:
+        block_name: RadFrac block name.
+        stage:      Stage number to remove.
+    """
+    app = manager.get_app(session_name)
+    if app is None:
+        return f"No active session named '{session_name}'."
+    try:
+        duty_node = app.Tree.FindNode(
+            rf"\Data\Blocks\{block_name}\Input\HEATER_DUTY"
+        )
+        if duty_node is None:
+            return f"HEATER_DUTY node not found for block '{block_name}'."
+
+        stage_str = str(stage)
+        elems = duty_node.Elements
+        target_idx = None
+        for i in range(elems.Count):
+            if elems.Item(i).Name == stage_str:
+                target_idx = i
+                break
+        if target_idx is None:
+            return f"No side duty on stage {stage} of block '{block_name}'."
+
+        elems.RemoveRow(0, target_idx)
+        return f"Removed side duty on block '{block_name}' stage {stage}."
+    except Exception as exc:
+        return f"Failed to remove side duty on '{block_name}' stage {stage}: {exc}"

@@ -13,7 +13,11 @@ from mcp.server.fastmcp import FastMCP
 from aspen_manager import AspenPlusManager
 from searcher import DefinitionSearcher
 from tools import main_tools, flowsheet_tools, value_tools, create_tools
-from tools.properties_tools import get_property_method as _get_prop, set_property_method as _set_prop, add_component as _add_comp, remove_component as _rm_comp
+from tools.properties_tools import (
+    get_property_method as _get_prop, set_property_method as _set_prop,
+    add_component as _add_comp, remove_component as _rm_comp,
+    add_side_duty as _add_side_duty, remove_side_duty as _rm_side_duty,
+)
 from searcher.tool_searcher import search_properties as _search_props
 from searcher.discover_ports import discover_ports as _discover_ports
 
@@ -278,6 +282,32 @@ def remove_component(session_name: str, component_id: str) -> str:
     """Remove a component from the simulation component list by its label ID"""
     return _rm_comp(manager, session_name, component_id)
 
+
+@mcp.tool()
+def add_side_duty(session_name: str, block_name: str, stage: int, duty: float) -> str:
+    """Add or update a side duty (heater/cooler) on a RadFrac stage.
+
+    Creates a new HEATER_DUTY entry if the stage doesn't have one,
+    or updates the existing value. Use positive values for heating,
+    negative for cooling.
+
+    Args:
+        block_name: RadFrac block name (e.g. 'STRIP', 'RECT').
+        stage: Stage number (integer).
+        duty: Heat duty value in current display unit (e.g. cal/sec).
+    """
+    return _add_side_duty(manager, session_name, block_name, stage, duty)
+
+
+@mcp.tool()
+def remove_side_duty(session_name: str, block_name: str, stage: int) -> str:
+    """Remove a side duty entry from a RadFrac stage.
+
+    Args:
+        block_name: RadFrac block name.
+        stage: Stage number to remove the duty from.
+    """
+    return _rm_side_duty(manager, session_name, block_name, stage)
 
 
 

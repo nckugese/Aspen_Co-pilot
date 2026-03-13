@@ -369,7 +369,15 @@ def list_node_children(manager, session_name: str, aspen_path: str) -> str:
         children = []
         for i in range(els.Count):
             child = els.Item(i)
-            name = child.Name
+            if child is None:
+                children.append(f"  [{i}] = (None object)")
+                continue
+            try:
+                name = child.Name
+                if name is None:
+                    name = f"[{i}]"
+            except Exception:
+                name = f"[{i}]"
             try:
                 val = child.Value
                 if val is None:

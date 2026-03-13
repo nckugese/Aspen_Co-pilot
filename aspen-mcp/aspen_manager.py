@@ -104,6 +104,92 @@ class AspenPlusManager:
         return self._sessions[session_name]
 
     # ------------------------------------------------------------------
+    # Generic table-row helper (used by side duties, reactions, etc.)
+    # ------------------------------------------------------------------
+
+    def ensure_node(self, session_name: str, aspen_path: str):
+        """Ensure a node exists at *aspen_path*, creating missing table
+        rows along the way via InsertRow/SetLabel (or Elements.Add as
+        fallback).
+
+        Returns the COM node object, or None on failure.
+
+        Example:
+            node = manager.ensure_node(session, r'\\...\\COEF\\1\\ETHYLENE')
+            node.Value = -1
+        """
+        app = self.get_app(session_name)
+        if app is None:
+            return None
+
+        # Already exists?
+        node = app.Tree.FindNode(aspen_path)
+        if node is not None:
+            return node
+
+        # Walk up to find the deepest existing ancestor
+        parts = aspen_path.split("\\")
+        existing_depth = len(parts)
+        ancestor = None
+        while existing_depth > 1:
+            existing_depth -= 1
+            ancestor = app.Tree.FindNode("\\".join(parts[:existing_depth]))
+            if ancestor is not None:
+                break
+        if ancestor is None:
+            return None
+
+        # Create each missing level
+        for depth in range(existing_depth, len(parts)):
+            label = parts[depth]
+            elems = ancestor.Elements
+
+            # Check if child already exists
+            child = None
+            try:
+                for i in range(elems.Count):
+                    if elems.Item(i).Name == label:
+                        child = elems.Item(i)
+                        break
+            except Exception:
+                return None
+
+            if child is None:
+                child = self._try_create_child(app, elems, label, parts, depth)
+                if child is None:
+                    return None
+            ancestor = child
+
+        return ancestor
+
+    @staticmethod
+    def _try_create_child(app, elems, label, parts, depth):
+        """Try InsertRow/SetLabel first, then Elements.Add as fallback."""
+        child_path = "\\".join(parts[: depth + 1])
+
+        # Strategy 1: InsertRow / SetLabel
+        try:
+            elems.InsertRow(0, elems.Count)
+            elems.SetLabel(0, elems.Count - 1, False, label)
+            child = app.Tree.FindNode(child_path)
+            if child is not None:
+                return child
+            return elems.Item(elems.Count - 1)
+        except Exception:
+            pass
+
+        # Strategy 2: Elements.Add
+        try:
+            elems.Add(label)
+            child = app.Tree.FindNode(child_path)
+            if child is not None:
+                return child
+        except Exception:
+            pass
+
+        return None
+
+    # ------------------------------------------------------------------
     # Low-level node value access (shared by block/stream/properties tools)
     # ------------------------------------------------------------------
 

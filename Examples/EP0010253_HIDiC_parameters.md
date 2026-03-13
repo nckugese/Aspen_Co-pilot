@@ -52,6 +52,7 @@
 | Total Side Duty | +390,000 (~1,632 kW) | cal/sec |
 
 ### RECT (RadFrac - Rectifying Section)
+Feed Convention must change to ON-STAGE
 | Parameter | Value | Unit |
 |-----------|-------|------|
 | Number of Stages | 15 | - |
@@ -67,6 +68,7 @@
 | Total Side Duty | -390,000 (~-1,632 kW) | cal/sec |
 
 ### COMP (Compr - Compressor)
+"\Data\Blocks\COMP\Input\OPT_SPEC" must change value to "PRES"
 | Parameter | Value | Unit |
 |-----------|-------|------|
 | Type | ISENTROPIC | - |
