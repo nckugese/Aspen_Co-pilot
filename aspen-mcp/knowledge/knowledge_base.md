@@ -33,7 +33,7 @@ Tips, gotchas, and patterns for building simulations via the Aspen Plus COM API 
 
 ### RadFrac (Rigorous Distillation)
 - **Operating specs limit** — RadFrac has only 2 operating specifications. You must clear one before setting another (e.g. clear `BASIS_BR` before setting `QN`).
-- **Side duties (HEATER_DUTY)** — Stage-indexed entries must be created in the GUI first. COM cannot create new stage entries, only modify existing ones.
+- **Side duties (HEATER_DUTY)** — Can be created via COM using `InsertRow`/`SetLabel` on the `HEATER_DUTY` node's `Elements` collection (same `IHNodeCol` API as components). Use the `add_side_duty` / `remove_side_duty` tools. Note: Aspen rejects side duties on top stage (condenser) and bottom stage (reboiler) — use condenser/reboiler duty specs instead.
 - **Feed convention** — `FEED_CONVEN` and `FEED_CONVE2` control `ABOVE-STAGE` vs `ON-STAGE` behavior.
 - **Feed stage for bottom feed** — On an N-stage column with no reboiler, use stage `N+1` for the bottom feed.
 - **Condenser/Reboiler types** — Set `CONDENSER` (e.g. `TOTAL`, `PARTIAL-V`) and `REBOILER` (e.g. `KETTLE`, `NONE`) early, as they affect stage numbering.
