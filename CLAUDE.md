@@ -15,5 +15,4 @@ Do NOT guess Aspen paths or parameters. Always read the relevant doc file first.
 - `aspen-mcp/server.py` — MCP server entry point (all tool registrations)
 - `aspen-mcp/aspen_manager.py` — COM connection manager and low-level operations
 - `aspen-mcp/tools/` — Tool implementations
-- `aspen-mcp/knowledge/knowledge_base.md` — General tips and gotchas (loaded as MCP resource)
 - `aspen-mcp/definitions/` — Block/stream YAML definitions for property lookup

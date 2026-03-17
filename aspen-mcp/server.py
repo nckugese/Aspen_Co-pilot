@@ -34,19 +34,6 @@ from searcher.discover_ports import discover_ports as _discover_ports
 mcp = FastMCP(name="aspen-plus")
 manager = AspenPlusManager()
 
-# ------------------------------------------------------------------
-# Knowledge base resource
-# ------------------------------------------------------------------
-
-_KNOWLEDGE_BASE_PATH = os.path.join(os.path.dirname(__file__), "knowledge", "knowledge_base.md")
-
-
-@mcp.resource("knowledge://aspen-plus/knowledge-base")
-def get_knowledge_base() -> str:
-    """Aspen Plus knowledge base — tips, gotchas, and patterns for using the COM API via MCP."""
-    with open(_KNOWLEDGE_BASE_PATH, "r", encoding="utf-8") as f:
-        return f.read()
-
 SGXML_DIR = os.environ.get("ASPEN_SGXML_DIR", None)
 searcher = DefinitionSearcher(sgxml_dir=SGXML_DIR)
 
