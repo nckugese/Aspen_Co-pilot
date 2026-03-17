@@ -408,3 +408,108 @@ class AspenPlusManager:
             return attribute
         upper = str(attribute).upper().replace(" ", "_").replace("-", "_")
         return self.HAP_ATTRS.get(upper)
+
+    # ------------------------------------------------------------------
+    # Generic Elements operations
+    # ------------------------------------------------------------------
+
+    def list_elements(self, session_name: str, aspen_path: str) -> str:
+        """List all elements under a node: index, name, and value."""
+        app = self.get_app(session_name)
+        if app is None:
+            return f"No active session named '{session_name}'."
+        try:
+            node = app.Tree.FindNode(aspen_path)
+            if node is None:
+                return f"Node not found: {aspen_path}"
+            els = node.Elements
+            count = els.Count
+            if count == 0:
+                return f"'{aspen_path}' has 0 elements."
+            lines = [f"'{aspen_path}' has {count} element(s):"]
+            for i in range(count):
+                el = els.Item(i)
+                name = el.Name if el else "(null)"
+                try:
+                    val = el.Value
+                except Exception:
+                    val = None
+                lines.append(f"  [{i}] {name} = {val}")
+            return "\n".join(lines)
+        except Exception as exc:
+            return f"Error listing elements at '{aspen_path}': {exc}"
+
+    def add_element(self, session_name: str, aspen_path: str, name: str) -> str:
+        """Add an element to a node's Elements collection via Elements.Add(name).
+
+        Use 'NAME!TYPE' syntax for typed elements (e.g. 'B1!Heater', 'R1!POWERLAW').
+        """
+        app = self.get_app(session_name)
+        if app is None:
+            return f"No active session named '{session_name}'."
+        try:
+            node = app.Tree.FindNode(aspen_path)
+            if node is None:
+                return f"Node not found: {aspen_path}"
+            node.Elements.Add(name)
+            return f"Added element '{name}' at '{aspen_path}'."
+        except Exception as exc:
+            return f"Error adding element '{name}' at '{aspen_path}': {exc}"
+
+    def remove_element(self, session_name: str, aspen_path: str, name: str) -> str:
+        """Remove an element from a node's Elements collection by name."""
+        app = self.get_app(session_name)
+        if app is None:
+            return f"No active session named '{session_name}'."
+        try:
+            node = app.Tree.FindNode(aspen_path)
+            if node is None:
+                return f"Node not found: {aspen_path}"
+            node.Elements.Remove(name)
+            return f"Removed element '{name}' from '{aspen_path}'."
+        except Exception as exc:
+            return f"Error removing element '{name}' from '{aspen_path}': {exc}"
+
+    def insert_row(self, session_name: str, aspen_path: str,
+                   label: str, dimension: int = 0) -> str:
+        """Insert a new row in a table node and set its label.
+
+        Equivalent to: Elements.InsertRow(dimension, count) + SetLabel(dimension, index, False, label).
+        """
+        app = self.get_app(session_name)
+        if app is None:
+            return f"No active session named '{session_name}'."
+        try:
+            node = app.Tree.FindNode(aspen_path)
+            if node is None:
+                return f"Node not found: {aspen_path}"
+            els = node.Elements
+            idx = els.Count
+            els.InsertRow(dimension, idx)
+            els.SetLabel(dimension, idx, False, label)
+            return f"Inserted row at '{aspen_path}' dim={dimension} label='{label}' (index={idx})."
+        except Exception as exc:
+            return f"Error inserting row at '{aspen_path}': {exc}"
+
+    def remove_row(self, session_name: str, aspen_path: str,
+                   index: int, dimension: int = 0) -> str:
+        """Remove a row from a table node by index.
+
+        Equivalent to: Elements.RemoveRow(dimension, index).
+        """
+        app = self.get_app(session_name)
+        if app is None:
+            return f"No active session named '{session_name}'."
+        try:
+            node = app.Tree.FindNode(aspen_path)
+            if node is None:
+                return f"Node not found: {aspen_path}"
+            els = node.Elements
+            if index >= els.Count:
+                return f"Index {index} out of range (count={els.Count})."
+            # Get name before removing for confirmation
+            name = els.Item(index).Name if els.Item(index) else str(index)
+            els.RemoveRow(dimension, index)
+            return f"Removed row [{index}] '{name}' from '{aspen_path}'."
+        except Exception as exc:
+            return f"Error removing row {index} from '{aspen_path}': {exc}"

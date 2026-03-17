@@ -18,6 +18,12 @@ from tools.properties_tools import (
     add_component as _add_comp, remove_component as _rm_comp,
     add_side_duty as _add_side_duty, remove_side_duty as _rm_side_duty,
 )
+from tools.reaction_tools import (
+    add_reaction_set as _add_rxn_set,
+    remove_reaction_set as _rm_rxn_set,
+    add_reaction as _add_rxn,
+    remove_reaction as _rm_rxn,
+)
 from searcher.tool_searcher import search_properties as _search_props
 from searcher.discover_ports import discover_ports as _discover_ports
 
@@ -309,6 +315,152 @@ def remove_side_duty(session_name: str, block_name: str, stage: int) -> str:
     """
     return _rm_side_duty(manager, session_name, block_name, stage)
 
+
+
+# ==================================================================
+# Reaction tools (4)
+# ==================================================================
+
+@mcp.tool()
+def add_reaction_set(
+    session_name: str, reaction_set_name: str,
+    reaction_type: str = "POWERLAW"
+) -> str:
+    """Create a new reaction set (e.g. POWERLAW, LHHW, EQUILIBRIUM).
+
+    This creates the reaction set container. Use add_reaction next to
+    define individual reactions with stoichiometry inside the set.
+
+    Args:
+        reaction_set_name: Name for the set (e.g. 'R-1').
+        reaction_type: Model type — POWERLAW, LHHW, GENERAL, EQUILIBRIUM.
+    """
+    return _add_rxn_set(manager, session_name, reaction_set_name, reaction_type)
+
+
+@mcp.tool()
+def remove_reaction_set(session_name: str, reaction_set_name: str) -> str:
+    """Remove a reaction set and all its reactions."""
+    return _rm_rxn_set(manager, session_name, reaction_set_name)
+
+
+@mcp.tool()
+def remove_reaction(
+    session_name: str, reaction_set_name: str, reaction_no: int
+) -> str:
+    """Remove a single reaction from a reaction set.
+
+    Removes the specified reaction number and all its associated data
+    (stoichiometry, exponents, kinetics) while keeping other reactions.
+
+    Args:
+        reaction_set_name: Reaction set name (e.g. 'R-1').
+        reaction_no: Reaction number to remove (e.g. 2).
+    """
+    return _rm_rxn(manager, session_name, reaction_set_name, reaction_no)
+
+
+@mcp.tool()
+def add_reaction(
+    session_name: str, reaction_set_name: str,
+    reaction_no: int,
+    reactants: dict[str, float],
+    products: dict[str, float],
+    phase: str = "L",
+    exponents: dict[str, float] = None,
+) -> str:
+    """Add a reaction with stoichiometry to an existing reaction set.
+
+    Creates the reaction and sets stoichiometric coefficients and
+    concentration exponents for the rate law.
+
+    Args:
+        reaction_set_name: Reaction set name (e.g. 'R-1').
+        reaction_no: Reaction number within the set (usually 1).
+        reactants: {component_id: coefficient} — use positive values,
+                   Aspen auto-negates (e.g. {'ACETICAC': 1, 'METHANOL': 1}).
+        products: {component_id: coefficient} — use positive values
+                  (e.g. {'METHYLAC': 1, 'WATER': 1}).
+        phase: 'L' (liquid) or 'V' (vapor).
+        exponents: {component_id: exponent} for rate law. If omitted,
+                   defaults to abs(reactant coefficients).
+    """
+    return _add_rxn(
+        manager, session_name, reaction_set_name, reaction_no,
+        reactants, products, phase, exponents,
+    )
+
+
+# ==================================================================
+# Generic Elements tools (5)
+# ==================================================================
+
+@mcp.tool()
+def list_elements(session_name: str, aspen_path: str) -> str:
+    """List all elements under a node in the data tree.
+
+    Shows index, name, and value for each element.
+    Use this to explore table/collection nodes.
+
+    Example: list_elements(session, '\\Data\\Blocks')
+    """
+    return manager.list_elements(session_name, aspen_path)
+
+
+@mcp.tool()
+def add_element(session_name: str, aspen_path: str, name: str) -> str:
+    """Add an element to a node via Elements.Add(name).
+
+    Use 'NAME!TYPE' syntax for typed elements (e.g. 'B1!Heater', 'R1!POWERLAW').
+    This is the generic version of place_block, place_stream, etc.
+
+    Examples:
+      - add_element(session, '\\Data\\Blocks', 'PUMP1!Pump')
+      - add_element(session, '\\Data\\Reactions\\Reactions', 'RXN1!POWERLAW')
+    """
+    return manager.add_element(session_name, aspen_path, name)
+
+
+@mcp.tool()
+def remove_element(session_name: str, aspen_path: str, name: str) -> str:
+    """Remove an element from a node by name via Elements.Remove(name).
+
+    Examples:
+      - remove_element(session, '\\Data\\Blocks', 'PUMP1')
+      - remove_element(session, '\\Data\\Streams', 'S1')
+    """
+    return manager.remove_element(session_name, aspen_path, name)
+
+
+@mcp.tool()
+def insert_row(session_name: str, aspen_path: str, label: str, dimension: int = 0) -> str:
+    """Insert a new row in a table node and set its label.
+
+    Use this for table-type nodes that require InsertRow + SetLabel
+    (e.g. component lists, reaction stoichiometry, side duties).
+
+    Args:
+        aspen_path: Path to the table node.
+        label: Label for the new row.
+        dimension: Table dimension (default 0).
+
+    Example: insert_row(session, '\\Data\\Blocks\\R1\\Input\\RXN_ID', 'CRACKING')
+    """
+    return manager.insert_row(session_name, aspen_path, label, dimension)
+
+
+@mcp.tool()
+def remove_row(session_name: str, aspen_path: str, index: int, dimension: int = 0) -> str:
+    """Remove a row from a table node by index.
+
+    Args:
+        aspen_path: Path to the table node.
+        index: Row index to remove (0-based).
+        dimension: Table dimension (default 0).
+
+    Use list_elements to see current indices before removing.
+    """
+    return manager.remove_row(session_name, aspen_path, index, dimension)
 
 
 # ==================================================================

@@ -117,8 +117,68 @@ Tips, gotchas, and patterns for building simulations via the Aspen Plus COM API 
 
 - **Exploring the data tree** — Use `list_node_children` to navigate. Start from `\Data\Blocks`, `\Data\Streams`, `\Data\Properties`, etc.
 - **Input vs Output** — Block inputs are under `\Data\Blocks\{name}\Input\...`, outputs under `\Data\Blocks\{name}\Output\...`.
-- **Setting values with units** — Use the `unit` parameter in `set_block_value`, `set_stream_value`, or `set_node_value` to specify units (e.g. `unit="bar"`, `unit="C"`). The system handles conversion automatically.
+- **Setting values with units** — Use the `unit` parameter in `set_value` to specify units (e.g. `unit="bar"`, `unit="C"`). The system handles conversion automatically.
 - **Search before guessing** — Use `search_properties` to find the correct property name and path before attempting to set values.
+
+### Generic Elements Tools
+
+Five low-level tools for direct COM element manipulation. Use these when the high-level tools (place_block, add_component, etc.) don't cover your use case.
+
+| Tool | COM Operation | When to Use |
+|------|--------------|-------------|
+| `list_elements(path)` | `Elements.Count + Item(i)` | Explore any collection/table node. Always start here to understand the node's structure. |
+| `add_element(path, name)` | `Elements.Add(name)` | Add to collections that support Add. Use `NAME!TYPE` syntax for typed elements (e.g. `B1!Heater`). |
+| `remove_element(path, name)` | `Elements.Remove(name)` | Remove from collections by name. |
+| `insert_row(path, label, dim)` | `InsertRow + SetLabel` | Add labeled rows to table nodes (e.g. component lists, stoichiometry tables). |
+| `remove_row(path, index, dim)` | `RemoveRow` | Remove rows from table nodes by index. Use `list_elements` first to find the index. |
+
+### Common Patterns with Generic Tools
+
+**Pattern 1: Select a reaction set for a reactor block (RCSTR, RPlug)**
+The RXN_ID node already has an empty element `#0`. Just set its value:
+```
+list_elements(session, '\Data\Blocks\R1\Input\RXN_ID')
+→ [0] #0 = None
+
+set_value(session, aspen_path='\Data\Blocks\R1\Input\RXN_ID\#0', value='RXN1')
+→ RXN1 selected
+```
+
+**Pattern 2: Discover unknown node structure**
+When you don't know what a node contains, use `list_elements` to inspect it:
+```
+list_elements(session, '\Data\Blocks')
+→ [0] PUMP1 = None, [1] HEATER1 = None, ...
+
+list_elements(session, '\Data\Reactions\Reactions')
+→ [0] RXN1 = None
+```
+
+**Pattern 3: Add typed elements (blocks, reaction sets)**
+Use `add_element` with `NAME!TYPE` syntax:
+```
+add_element(session, '\Data\Blocks', 'PUMP1!Pump')
+add_element(session, '\Data\Reactions\Reactions', 'RXN1!POWERLAW')
+```
+
+**Pattern 4: Table manipulation (stoichiometry, component lists)**
+Use `insert_row` for labeled table entries:
+```
+insert_row(session, '\Data\Reactions\Reactions\RXN1\Input\COEF\1', 'ETHANE')
+set_value(session, aspen_path='\Data\Reactions\Reactions\RXN1\Input\COEF\1\ETHANE\MIXED', value='1')
+```
+
+**Pattern 5: When insert_row fails with "no label" error**
+Some nodes don't support SetLabel (e.g. RXN_ID). Use `list_elements` to check if a blank element already exists, then set its value directly with `set_value`.
+
+### Choosing the Right Tool
+
+- **Know the path and it's a simple value?** → `set_value`
+- **Need to explore what's under a node?** → `list_elements` or `list_node_children`
+- **Need to add a new block/stream/reaction set?** → `add_element` with `NAME!TYPE`
+- **Need to add a row to a table (components, stoichiometry)?** → `insert_row`
+- **Node has a pre-existing empty element?** → `list_elements` to find it, then `set_value`
+- **Need to remove something?** → `remove_element` (by name) or `remove_row` (by index)
 
 ---
 
