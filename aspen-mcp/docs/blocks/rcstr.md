@@ -1,6 +1,6 @@
 # RCSTR (Continuous Stirred Tank Reactor)
 
-Kinetic reactor with perfect mixing. Requires a reaction set with kinetic parameters.
+Kinetic reactor with perfect mixing. Requires an external reaction set with kinetic parameters.
 
 ## Ports
 
@@ -12,12 +12,13 @@ Kinetic reactor with perfect mixing. Requires a reaction set with kinetic parame
 | P | OUT | Product |
 | HS | OUT | Heat stream out |
 
-## Key Input Paths
+## Input
 
 | Path | Type | Description |
 |------|------|-------------|
-| `\Data\Blocks\{name}\Input\TEMP` | float | Reactor temperature |
-| `\Data\Blocks\{name}\Input\PRES` | float | Reactor pressure |
+| `\Data\Blocks\{name}\Input\TEMP` | float | Specified temperature |
+| `\Data\Blocks\{name}\Input\PRES` | float | Specified pressure |
+| `\Data\Blocks\{name}\Input\DUTY` | float | Specified heat duty |
 | `\Data\Blocks\{name}\Input\VOL` | float | Reactor volume (when SPEC_TYPE=TOT-VOL) |
 | `\Data\Blocks\{name}\Input\RES_TIME` | float | Residence time (when SPEC_TYPE=RES-TIME) |
 | `\Data\Blocks\{name}\Input\SPEC_OPT` | string | Thermal spec: `TEMP`, `DUTY`, `VFRAC` |
@@ -25,6 +26,20 @@ Kinetic reactor with perfect mixing. Requires a reaction set with kinetic parame
 | `\Data\Blocks\{name}\Input\PHASE` | string | Valid phases: `V`, `L`, `V-L` |
 | `\Data\Blocks\{name}\Input\NPHASE` | int | Number of phases (1 or 2) |
 | `\Data\Blocks\{name}\Input\RXN_ID` | table | Selected reaction set(s) |
+
+## Output
+
+| Path | Type | Description |
+|------|------|-------------|
+| `\Data\Blocks\{name}\Output\B_TEMP` | float | Outlet temperature |
+| `\Data\Blocks\{name}\Output\QCALC` | float | Calculated heat duty |
+| `\Data\Blocks\{name}\Output\QNET` | float | Net heat duty |
+| `\Data\Blocks\{name}\Output\TOT_VOL` | float | Total reactor volume |
+| `\Data\Blocks\{name}\Output\VAP_VOL` | float | Vapor phase volume |
+| `\Data\Blocks\{name}\Output\LIQ_VOL` | float | Liquid phase volume |
+| `\Data\Blocks\{name}\Output\TOT_RES_TIME` | float | Total residence time |
+| `\Data\Blocks\{name}\Output\VAP_RES_TIME` | float | Vapor phase residence time |
+| `\Data\Blocks\{name}\Output\COND_RES_TIM` | float | Condensed phase residence time |
 
 ## Assigning a Reaction Set
 
@@ -37,7 +52,7 @@ list_elements(session, '\Data\Blocks\R1\Input\RXN_ID')
 set_value(session, aspen_path='\Data\Blocks\R1\Input\RXN_ID\#0', value='CRACKING')
 ```
 
-## Typical Setup Steps
+## Typical Setup
 
 1. Place block: `place_block(session, 'R1', 'RCSTR')`
 2. Set temperature: `set_value(session, aspen_path='\Data\Blocks\R1\Input\TEMP', value='850', unit='C')`
