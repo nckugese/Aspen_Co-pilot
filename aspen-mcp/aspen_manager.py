@@ -471,10 +471,11 @@ class AspenPlusManager:
             return f"Error removing element '{name}' from '{aspen_path}': {exc}"
 
     def insert_row(self, session_name: str, aspen_path: str,
-                   label: str, dimension: int = 0) -> str:
-        """Insert a new row in a table node and set its label.
+                   dimension: int = 0) -> str:
+        """Insert a new row in a table node.
 
-        Equivalent to: Elements.InsertRow(dimension, count) + SetLabel(dimension, index, False, label).
+        Equivalent to: Elements.InsertRow(dimension, count).
+        Returns the index of the newly inserted row.
         """
         app = self.get_app(session_name)
         if app is None:
@@ -486,10 +487,28 @@ class AspenPlusManager:
             els = node.Elements
             idx = els.Count
             els.InsertRow(dimension, idx)
-            els.SetLabel(dimension, idx, False, label)
-            return f"Inserted row at '{aspen_path}' dim={dimension} label='{label}' (index={idx})."
+            return f"Inserted row at '{aspen_path}' dim={dimension} index={idx}."
         except Exception as exc:
             return f"Error inserting row at '{aspen_path}': {exc}"
+
+    def set_label(self, session_name: str, aspen_path: str,
+                  index: int, label: str, dimension: int = 0) -> str:
+        """Set the label of a row in a table node.
+
+        Equivalent to: Elements.SetLabel(dimension, index, False, label).
+        """
+        app = self.get_app(session_name)
+        if app is None:
+            return f"No active session named '{session_name}'."
+        try:
+            node = app.Tree.FindNode(aspen_path)
+            if node is None:
+                return f"Node not found: {aspen_path}"
+            els = node.Elements
+            els.SetLabel(dimension, index, False, label)
+            return f"Set label '{label}' at '{aspen_path}' dim={dimension} index={index}."
+        except Exception as exc:
+            return f"Error setting label at '{aspen_path}': {exc}"
 
     def remove_row(self, session_name: str, aspen_path: str,
                    index: int, dimension: int = 0) -> str:

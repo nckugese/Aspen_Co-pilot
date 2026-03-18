@@ -281,52 +281,52 @@ def check_inputs(manager, session_name: str) -> str:
     app = manager.get_app(session_name)
     if app is None:
         return f"No active session named '{session_name}'."
-    try:
-        incomplete = []
-        node = app.Tree.FindNode(r"\Data")
-        seen = set()
-        for _ in range(200):  # safety limit
+    incomplete = []
+    node = app.Tree.FindNode(r"\Data")
+    seen = set()
+    for _ in range(200):  # safety limit
+        try:
             result = node.NextIncomplete(64)  # HAP_INPUT_INCOMPLETE
-            # COM returns (path_or_node, code) tuple
-            if isinstance(result, tuple):
-                item = result[0]
-            else:
-                item = result
-            if item is None:
+        except Exception:
+            break  # no more incomplete items
+        # COM returns (path_or_node, code) tuple
+        if isinstance(result, tuple):
+            item = result[0]
+        else:
+            item = result
+        if item is None:
+            break
+        # item may be a path string or a COM node
+        if isinstance(item, str):
+            path = item
+            if not path or path in seen:
                 break
-            # item may be a path string or a COM node
-            if isinstance(item, str):
-                path = item
-                if path in seen:
-                    break
-                seen.add(path)
-                incomplete.append(f"  - {path}")
-                # navigate to this node for next iteration
-                next_node = app.Tree.FindNode(path)
-                if next_node is None:
-                    break
-                node = next_node
+            seen.add(path)
+            incomplete.append(f"  - {path}")
+            # navigate to this node for next iteration
+            next_node = app.Tree.FindNode(path)
+            if next_node is None:
+                break
+            node = next_node
+        else:
+            # COM node object
+            name = item.Name
+            if not name or name in seen:
+                break
+            seen.add(name)
+            try:
+                prompt = item.AttributeValue(19)  # HAP_PROMPT
+            except Exception:
+                prompt = ""
+            if prompt:
+                incomplete.append(f"  - {name}: {prompt}")
             else:
-                # COM node object
-                name = item.Name
-                if name in seen:
-                    break
-                seen.add(name)
-                try:
-                    prompt = item.AttributeValue(19)  # HAP_PROMPT
-                except Exception:
-                    prompt = ""
-                if prompt:
-                    incomplete.append(f"  - {name}: {prompt}")
-                else:
-                    incomplete.append(f"  - {name}")
-                node = item
+                incomplete.append(f"  - {name}")
+            node = item
 
-        if not incomplete:
-            return "All required inputs are complete. Ready to run."
-        return f"Incomplete inputs ({len(incomplete)}):\n" + "\n".join(incomplete)
-    except Exception as exc:
-        return f"Error checking inputs: {exc}"
+    if not incomplete:
+        return "All required inputs are complete. Ready to run."
+    return f"Incomplete inputs ({len(incomplete)}):\n" + "\n".join(incomplete)
 
 
 def get_node_value(manager, session_name: str, aspen_path: str) -> str:

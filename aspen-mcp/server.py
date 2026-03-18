@@ -420,20 +420,39 @@ def remove_element(session_name: str, aspen_path: str, name: str) -> str:
 
 
 @mcp.tool()
-def insert_row(session_name: str, aspen_path: str, label: str, dimension: int = 0) -> str:
-    """Insert a new row in a table node and set its label.
+def insert_row(session_name: str, aspen_path: str, dimension: int = 0) -> str:
+    """Insert a new row in a table node.
 
-    Use this for table-type nodes that require InsertRow + SetLabel
-    (e.g. component lists, reaction stoichiometry, side duties).
+    Use this for table-type nodes that require adding rows
+    (e.g. component lists, reaction stoichiometry, sensitivity variables).
+    Returns the index of the newly inserted row.
+    Use set_label separately if the row needs a label.
 
     Args:
         aspen_path: Path to the table node.
-        label: Label for the new row.
         dimension: Table dimension (default 0).
 
-    Example: insert_row(session, '\\Data\\Blocks\\R1\\Input\\RXN_ID', 'CRACKING')
+    Example: insert_row(session, '\\Data\\Blocks\\R1\\Input\\RXN_ID')
     """
-    return manager.insert_row(session_name, aspen_path, label, dimension)
+    return manager.insert_row(session_name, aspen_path, dimension)
+
+
+@mcp.tool()
+def set_label(session_name: str, aspen_path: str, index: int, label: str, dimension: int = 0) -> str:
+    """Set the label of a row in a table node.
+
+    Use this after insert_row to assign a label to the new row.
+    Some table dimensions do not support labels — in that case, skip this step.
+
+    Args:
+        aspen_path: Path to the table node.
+        index: Row index to label.
+        label: Label string.
+        dimension: Table dimension (default 0).
+
+    Example: set_label(session, '\\Data\\Blocks\\R1\\Input\\RXN_ID', 0, 'CRACKING')
+    """
+    return manager.set_label(session_name, aspen_path, index, label, dimension)
 
 
 @mcp.tool()

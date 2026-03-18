@@ -9,7 +9,8 @@ Low-level COM element manipulation tools for any operation not covered by high-l
 | `list_elements(path)` | `Count + Item(i)` | List all elements: index, name, value |
 | `add_element(path, name)` | `Elements.Add(name)` | Add element. Use `NAME!TYPE` for typed elements |
 | `remove_element(path, name)` | `Elements.Remove(name)` | Remove element by name |
-| `insert_row(path, label, dim)` | `InsertRow + SetLabel` | Insert labeled table row |
+| `insert_row(path, dim)` | `InsertRow` | Insert table row (returns index) |
+| `set_label(path, index, label, dim)` | `SetLabel` | Set label on a table row |
 | `remove_row(path, index, dim)` | `RemoveRow` | Remove table row by index |
 
 ## When to Use Which
@@ -19,7 +20,7 @@ Low-level COM element manipulation tools for any operation not covered by high-l
 | Don't know what's inside a node | `list_elements` |
 | Add a block/stream/reaction set | `add_element` with `NAME!TYPE` |
 | Remove a block/stream | `remove_element` |
-| Add to a labeled table (components, stoichiometry) | `insert_row` |
+| Add to a table | `insert_row`, then `set_label` if the dimension supports labels |
 | Remove from a table by index | `remove_row` |
 | Node has a pre-existing empty element | `list_elements` → `set_value` on the element |
 
@@ -46,12 +47,15 @@ When encountering an unknown node:
 2. `list_elements(path)` — see element collection structure
 3. Decide: `set_value`, `add_element`, or `insert_row` based on structure
 
-### Pattern 4: When insert_row fails with "no label" error
-Some nodes don't support labels. Check if a blank element already exists:
+### Pattern 4: Insert row then label
 ```
-list_elements(session, path)
-→ [0] #0 = None        ← blank element exists, just set_value on it
+insert_row(session, '\Data\Blocks\R1\Input\RXN_ID')
+→ Inserted row at ... index=0.
+
+set_label(session, '\Data\Blocks\R1\Input\RXN_ID', 0, 'CRACKING')
+→ Set label 'CRACKING' at ... index=0.
 ```
+Some dimensions don't support labels (e.g. Sensitivity VARY tables) — just skip `set_label` for those.
 
 ### Pattern 5: Connect stream to block port
 ```

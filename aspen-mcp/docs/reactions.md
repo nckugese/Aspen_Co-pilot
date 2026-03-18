@@ -35,7 +35,7 @@ add_reaction(session, 'RXN1', reaction_no=1,
 | `\Data\Reactions\Reactions\{set}\Input\COEF1\{rxn}\{comp}\MIXED` | float | Product coefficient |
 | `\Data\Reactions\Reactions\{set}\Input\EXPONENT\{rxn}\{comp}\MIXED` | float | Concentration exponent |
 | `\Data\Reactions\Reactions\{set}\Input\PRE_EXP\{rxn}` | float | Pre-exponential factor k0 |
-| `\Data\Reactions\Reactions\{set}\Input\ACT_ENERGY\{rxn}` | float | Activation energy E |
+| `\Data\Reactions\Reactions\{set}\Input\ACT_ENERGY\{rxn}` | float | Activation energy E (default unit: cal/mol) |
 | `\Data\Reactions\Reactions\{set}\Input\T_EXP\{rxn}` | float | Temperature exponent n |
 
 ## Assigning Reaction Set to a Reactor Block

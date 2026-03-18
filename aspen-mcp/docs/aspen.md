@@ -15,8 +15,8 @@ When you need to configure a specific Aspen Plus object, read the corresponding 
 ## Standard Workflow
 
 1. **Create or open simulation** → `create_new_simulation(project_name, folder)` (new) or `open_aspen_plus(file_path)` (existing)
-2. **Set property method** → `set_property_method(session, 'PENG-ROB')`
-3. **Add components** → `add_component(session, 'ETHANOL')` (one at a time)
+2. **Add components** → `add_component(session, 'ETHANOL')` (one at a time)
+3. **Set property method** → `set_property_method(session, 'PENG-ROB')`
 4. **Build flowsheet** → `place_block`, `place_stream`, `connect_stream`
 5. **Configure blocks** → `set_value` with block paths or property lookup
 6. **Configure streams** → `set_value` with stream paths or property lookup
@@ -44,6 +44,10 @@ See [elements.md](elements.md) for low-level COM element manipulation (list_elem
 ## Properties
 
 See [properties.md](properties.md) for property methods, components, and databank operations.
+
+## Model Analysis Tools
+
+See [sensitivity.md](sensitivity.md) for sensitivity analysis setup (vary, define, tabulate).
 
 ## Convergence
 
