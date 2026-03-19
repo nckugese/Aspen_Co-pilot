@@ -24,6 +24,7 @@ from tools.reaction_tools import (
     add_reaction as _add_rxn,
     remove_reaction as _rm_rxn,
 )
+from tools.optimization_tools import run_optimization as _run_optimization
 from searcher.tool_searcher import search_properties as _search_props
 from searcher.discover_ports import discover_ports as _discover_ports
 
@@ -537,6 +538,57 @@ def create_tool(
     """
     return create_tools.create_tool(
         searcher, name, category, description, block_type, stream_type, properties
+    )
+
+
+# ==================================================================
+# Optimization tool (1)
+# ==================================================================
+
+@mcp.tool()
+def optimize(
+    session_name: str,
+    variables: list[dict],
+    objectives: list[dict],
+    constraints: list[dict] = None,
+    pop_size: int = 50,
+    n_gen: int = 30,
+    crossover_prob: float = 0.8,
+    mutation_prob: float = 0.2,
+    output_dir: str = None,
+) -> str:
+    """Run NSGA-II multi-objective genetic algorithm optimization.
+
+    Iteratively adjusts decision variables, runs the Aspen simulation,
+    and evolves towards the Pareto-optimal front.
+
+    Args:
+        session_name: Active Aspen Plus session.
+        variables: Decision variables, each a dict with keys:
+            - aspen_path: Aspen tree path (e.g. '\\Data\\Blocks\\B1\\Input\\REFLUX_RATIO')
+            - lower: Lower bound (float)
+            - upper: Upper bound (float)
+            - type: Optional, 'int' for integer variables
+        objectives: Objectives, each a dict with keys:
+            - aspen_path: Aspen tree path to read the objective value
+            - direction: 'minimize' or 'maximize'
+        constraints: Optional constraint list, each a dict with keys:
+            - aspen_path: Aspen tree path to read
+            - lower: Optional lower bound
+            - upper: Optional upper bound
+        pop_size: Population size per generation (default 50).
+        n_gen: Number of generations (default 30).
+        crossover_prob: Crossover probability (default 0.8).
+        mutation_prob: Mutation probability (default 0.2).
+        output_dir: Directory to save results JSON. Each run creates a
+            timestamped file (e.g. opt_session_20260318_143022.json).
+            If omitted, results are not saved to disk.
+    """
+    return _run_optimization(
+        manager, session_name, variables, objectives,
+        constraints=constraints, pop_size=pop_size, n_gen=n_gen,
+        crossover_prob=crossover_prob, mutation_prob=mutation_prob,
+        output_dir=output_dir,
     )
 
 
