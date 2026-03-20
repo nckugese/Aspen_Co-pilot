@@ -8,13 +8,16 @@ from __future__ import annotations
 
 import random
 import math
-import json
 import os
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from deap import base, creator, tools, algorithms
 
 from tools import main_tools
+
+if TYPE_CHECKING:
+    from mcp.server.fastmcp import Context
 
 
 # ---------------------------------------------------------------------------
@@ -202,60 +205,104 @@ def _best_compromise(pareto_front, weights):
 def _save_results(session_name: str, variables: list[dict], objectives: list[dict],
                   constraints: list[dict] | None, pop_size: int, n_gen: int,
                   crossover_prob: float, mutation_prob: float,
-                  pareto, weights, output_dir: str) -> str:
-    """Save optimization results to a timestamped JSON file."""
-    os.makedirs(output_dir, exist_ok=True)
-
+                  pareto, weights, log_lines: list[str],
+                  eval_log: list, output_dir: str) -> str:
+    """Save optimization results: Markdown report + CSV evaluation log."""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"opt_{session_name}_{timestamp}.json"
-    filepath = os.path.join(output_dir, filename)
+    run_dir = os.path.join(output_dir, f"opt_{session_name}_{timestamp}")
+    os.makedirs(run_dir, exist_ok=True)
 
-    # Build structured pareto data — use aspen_path as key (always unique)
-    pareto_data = []
+    filepath = os.path.join(run_dir, "report.md")
+
     comp_idx = _best_compromise(pareto, weights)
+    var_names = _unique_names([v["aspen_path"] for v in variables])
+    obj_names = [_obj_label(o) for o in objectives]
+    obj_dirs = [o.get("direction", "minimize") for o in objectives]
+
+    lines = [
+        f"# Optimization Report — {session_name}",
+        "",
+        f"**Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        "",
+        "## Settings",
+        "",
+        f"| Parameter | Value |",
+        f"|-----------|-------|",
+        f"| Population | {pop_size} |",
+        f"| Generations | {n_gen} |",
+        f"| Crossover | {crossover_prob} |",
+        f"| Mutation | {mutation_prob} |",
+        "",
+        "### Decision Variables",
+        "",
+        "| Name | Aspen Path | Lower | Upper | Type |",
+        "|------|------------|-------|-------|------|",
+    ]
+    for name, v in zip(var_names, variables):
+        vtype = v.get("type", "float")
+        lines.append(f"| {name} | `{v['aspen_path']}` | {v['lower']} | {v['upper']} | {vtype} |")
+
+    lines += ["", "### Objectives", "",
+              "| Name | Direction | Aspen Path |",
+              "|------|-----------|------------|"]
+    for name, d, o in zip(obj_names, obj_dirs, objectives):
+        path = ", ".join(o["aspen_paths"]) if "aspen_paths" in o else o["aspen_path"]
+        lines.append(f"| {name} | {d} | `{path}` |")
+
+    if constraints:
+        lines += ["", "### Constraints", "",
+                  "| Aspen Path | Lower | Upper |",
+                  "|------------|-------|-------|"]
+        for c in constraints:
+            lo = c.get("lower", "-")
+            hi = c.get("upper", "-")
+            lines.append(f"| `{c['aspen_path']}` | {lo} | {hi} |")
+
+    # Pareto front table
+    header_cols = ["#"] + var_names + [f"{n} ({d})" for n, d in zip(obj_names, obj_dirs)] + ["Best"]
+    lines += [
+        "",
+        f"## Pareto Front ({len(pareto)} solutions)",
+        "",
+        "| " + " | ".join(header_cols) + " |",
+        "| " + " | ".join(["---"] * len(header_cols)) + " |",
+    ]
     for idx, ind in enumerate(pareto):
         decoded = _decode(ind, variables)
-        obj_keys = []
-        for o in objectives:
-            if "aspen_paths" in o:
-                obj_keys.append("+".join(o["aspen_paths"]))
-            else:
-                obj_keys.append(o["aspen_path"])
-        entry = {
-            "rank": idx + 1,
-            "variables": {v["aspen_path"]: val for v, val in zip(variables, decoded)},
-            "objectives": {k: ind.fitness.values[i] for i, k in enumerate(obj_keys)},
-            "is_best_compromise": idx == comp_idx,
-        }
-        pareto_data.append(entry)
+        row = [str(idx + 1)]
+        row += [f"{v:.4g}" for v in decoded]
+        row += [f"{ind.fitness.values[i]:.4g}" for i in range(len(objectives))]
+        row += ["**>>>**" if idx == comp_idx else ""]
+        lines.append("| " + " | ".join(row) + " |")
 
-    result = {
-        "timestamp": datetime.now().isoformat(),
-        "session_name": session_name,
-        "config": {
-            "variables": variables,
-            "objectives": objectives,
-            "constraints": constraints,
-            "pop_size": pop_size,
-            "n_gen": n_gen,
-            "crossover_prob": crossover_prob,
-            "mutation_prob": mutation_prob,
-        },
-        "pareto_front": pareto_data,
-        "n_solutions": len(pareto_data),
-    }
+    # Generation log
+    lines += ["", "## Generation Log", ""]
+    for l in log_lines:
+        lines.append(f"- {l}")
 
     with open(filepath, "w", encoding="utf-8") as f:
-        json.dump(result, f, indent=2, ensure_ascii=False)
+        f.write("\n".join(lines) + "\n")
 
-    return filepath
+    # Save CSV evaluation log (every evaluation, for plotting)
+    csv_path = os.path.join(run_dir, "evaluations.csv")
+    csv_header = ["gen"] + var_names + obj_names + ["feasible"]
+    with open(csv_path, "w", encoding="utf-8") as f:
+        f.write(",".join(csv_header) + "\n")
+        for gen_num, decoded, obj_vals, feasible in eval_log:
+            row = [str(gen_num)]
+            row += [f"{v:.6g}" for v in decoded]
+            row += [f"{v:.6g}" for v in obj_vals]
+            row += ["1" if feasible else "0"]
+            f.write(",".join(row) + "\n")
+
+    return run_dir
 
 
 # ---------------------------------------------------------------------------
 # Main entry point
 # ---------------------------------------------------------------------------
 
-def run_optimization(
+async def run_optimization(
     manager,
     session_name: str,
     variables: list[dict],
@@ -266,6 +313,7 @@ def run_optimization(
     crossover_prob: float = 0.8,
     mutation_prob: float = 0.2,
     output_dir: str | None = None,
+    ctx: "Context | None" = None,
 ) -> str:
     """Run NSGA-II multi-objective optimization on an Aspen Plus simulation.
 
@@ -334,10 +382,25 @@ def run_optimization(
     pop = toolbox.population(n=pop_size)
 
     log_lines = []
+    eval_log = []  # Record every evaluation: (gen, variables..., objectives...)
+
+    # Total evaluations estimate: initial pop + n_gen * pop_size (upper bound)
+    total_evals = pop_size + n_gen * pop_size
+    eval_count = 0
+
+    def _record(gen_num, individual, fit_values):
+        """Record one evaluation to eval_log."""
+        decoded = _decode(individual, variables)
+        feasible = all(abs(v) < PENALTY * 0.1 for v in fit_values)
+        eval_log.append((gen_num, decoded, list(fit_values), feasible))
 
     # Evaluate initial population
     for ind in pop:
         ind.fitness.values = toolbox.evaluate(ind)
+        _record(0, ind, ind.fitness.values)
+        eval_count += 1
+        if ctx:
+            await ctx.report_progress(eval_count, total_evals)
 
     log_lines.append(f"Gen 0: evaluated {len(pop)} individuals")
 
@@ -363,11 +426,15 @@ def run_optimization(
         invalids = [ind for ind in offspring if not ind.fitness.valid]
         for ind in invalids:
             ind.fitness.values = toolbox.evaluate(ind)
+            _record(gen, ind, ind.fitness.values)
+            eval_count += 1
+            if ctx:
+                await ctx.report_progress(eval_count, total_evals)
 
         # Survivor selection
         pop = toolbox.select(pop + offspring, pop_size)
 
-        log_lines.append(f"Gen {gen}: evaluated {len(invalids)} new individuals")
+        log_lines.append(f"Gen {gen}/{n_gen}: evaluated {len(invalids)} new")
 
     # --- Extract Pareto front ----------------------------------------------
     pareto = tools.sortNondominated(pop, len(pop), first_front_only=True)[0]
@@ -421,7 +488,7 @@ def run_optimization(
             filepath = _save_results(
                 session_name, variables, objectives, constraints,
                 pop_size, n_gen, crossover_prob, mutation_prob,
-                pareto, weights, output_dir,
+                pareto, weights, log_lines, eval_log, output_dir,
             )
             lines.append("")
             lines.append(f"Results saved to: {filepath}")

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import os
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import FastMCP, Context
 
 from aspen_manager import AspenPlusManager
 from searcher import DefinitionSearcher
@@ -546,7 +546,7 @@ def create_tool(
 # ==================================================================
 
 @mcp.tool()
-def optimize(
+async def optimize(
     session_name: str,
     variables: list[dict],
     objectives: list[dict],
@@ -556,11 +556,15 @@ def optimize(
     crossover_prob: float = 0.8,
     mutation_prob: float = 0.2,
     output_dir: str = None,
+    ctx: Context = None,
 ) -> str:
     """Run NSGA-II multi-objective genetic algorithm optimization.
 
     Iteratively adjusts decision variables, runs the Aspen simulation,
     and evolves towards the Pareto-optimal front.
+
+    Progress is reported in real-time via MCP notifications after each
+    generation, showing feasible count and current best objective values.
 
     Args:
         session_name: Active Aspen Plus session.
@@ -584,11 +588,11 @@ def optimize(
             timestamped file (e.g. opt_session_20260318_143022.json).
             If omitted, results are not saved to disk.
     """
-    return _run_optimization(
+    return await _run_optimization(
         manager, session_name, variables, objectives,
         constraints=constraints, pop_size=pop_size, n_gen=n_gen,
         crossover_prob=crossover_prob, mutation_prob=mutation_prob,
-        output_dir=output_dir,
+        output_dir=output_dir, ctx=ctx,
     )
 
 

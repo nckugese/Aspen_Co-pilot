@@ -49,6 +49,8 @@ See [properties.md](properties.md) for property methods, components, and databan
 
 See [sensitivity.md](sensitivity.md) for sensitivity analysis setup (vary, define, tabulate).
 
+See [optimization.md](optimization.md) for built-in SQP optimization (objective, vary, constraints, Fortran).
+
 ## Convergence
 
 See [convergence.md](convergence.md) for simulation convergence, tear methods, and diagnostics.
