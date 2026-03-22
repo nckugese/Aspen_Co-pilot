@@ -16,7 +16,8 @@ Liquid pump for pressure increase. For gas compression, use Compr instead.
 
 | Path | Type | Description |
 |------|------|-------------|
-| `\Data\Blocks\{name}\Input\PUMP-TYPE` | string | Model type |
+| `\Data\Blocks\{name}\Input\PUMP-TYPE` | string | Model type (PUMP or TURBINE) |
+| `\Data\Blocks\{name}\Input\OPT_SPEC` | string | Specification type: `PRES`, `DELP`, `PRATIO`, or `POWER` |
 | `\Data\Blocks\{name}\Input\PRES` | float | Specified discharge pressure |
 | `\Data\Blocks\{name}\Input\DELP` | float | Specified pressure increase |
 | `\Data\Blocks\{name}\Input\PRATIO` | float | Specified pressure ratio |
@@ -24,7 +25,7 @@ Liquid pump for pressure increase. For gas compression, use Compr instead.
 | `\Data\Blocks\{name}\Input\EFF` | float | Pump efficiency (0–1) |
 | `\Data\Blocks\{name}\Input\DEFF` | float | Driver efficiency (0–1) |
 
-> Specify one pressure spec (PRES, DELP, PRATIO, or POWER) plus an efficiency.
+> **Must set `OPT_SPEC`** to select which specification is active (radio button), then set the corresponding value. Plus an efficiency.
 
 ## Output
 
@@ -44,10 +45,12 @@ Liquid pump for pressure increase. For gas compression, use Compr instead.
 ## Typical Setup
 
 1. Place: `place_block(session, 'P1', 'Pump')`
-2. Pressure: `set_value(session, aspen_path='\Data\Blocks\P1\Input\PRES', value='5', unit='atm')`
-3. Efficiency: `set_value(session, aspen_path='\Data\Blocks\P1\Input\EFF', value='0.75')`
+2. Spec type: `set_value(session, aspen_path='\Data\Blocks\P1\Input\OPT_SPEC', value='PRES')`
+3. Pressure: `set_value(session, aspen_path='\Data\Blocks\P1\Input\PRES', value='5', unit='atm')`
+4. Efficiency: `set_value(session, aspen_path='\Data\Blocks\P1\Input\EFF', value='0.75')`
 
 ## Gotchas
 
 - Pump is for **liquids only**. Gas feed will cause errors — use `Compr` for gas compression.
 - If no efficiency is set, Aspen uses a default of 1.0 (ideal pump).
+- **Must set `OPT_SPEC`** before setting the pressure value, otherwise the radio button won't be selected and the spec is ignored.
