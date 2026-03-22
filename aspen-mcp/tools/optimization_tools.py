@@ -178,28 +178,47 @@ def _read_objective(manager, session_name: str, obj: dict):
 
 
 def _evaluate(individual, *, manager, session_name, variables, objectives,
-              constraints, weights):
+              constraints, weights, _debug_log=None):
     penalty = tuple(PENALTY * (-w) for w in weights)
     decoded = _decode(individual, variables)
+
+    def _dbg(msg):
+        if _debug_log is not None:
+            _debug_log.append(msg)
 
     # Set decision variables
     for val, var in zip(decoded, variables):
         set_val = int(val) if var.get("type") == "int" else val
         result = manager.set_node_value(session_name, var["aspen_path"], value=set_val)
         if result.startswith(("Error", "Node not found")):
+            _dbg(f"SET_FAIL: {var['aspen_path']}={set_val} → {result}")
             return penalty
 
-    # Run simulation
-    run_result = main_tools.run_simulation(manager, session_name).lower()
-    if any(k in run_result for k in ("cannot run", "failed")) or \
-       ("error" in run_result and "0 errors" not in run_result):
+    # Run simulation — call Run2() directly to skip the completeness check
+    # in run_simulation(), which falsely blocks after programmatic input changes.
+    app = manager.get_app(session_name)
+    try:
+        app.Run2()
+    except Exception as exc:
+        _dbg(f"RUN_FAIL: {exc}")
         return penalty
+
+    # Check run status for errors
+    try:
+        status_msg = (main_tools._check_run_status(app) or "").lower()
+        if any(k in status_msg for k in ("failed",)) or \
+           ("error" in status_msg and "0 errors" not in status_msg):
+            _dbg(f"STATUS_FAIL: {status_msg}")
+            return penalty
+    except Exception:
+        pass
 
     # Read objectives
     obj_values = []
     for obj in objectives:
         v = _read_objective(manager, session_name, obj)
         if v is None:
+            _dbg(f"OBJ_READ_FAIL: {obj}")
             return penalty
         obj_values.append(v)
 
@@ -207,9 +226,11 @@ def _evaluate(individual, *, manager, session_name, variables, objectives,
     for con in (constraints or []):
         val = _read_value(manager, session_name, con["aspen_path"])
         if val is None:
+            _dbg(f"CONSTRAINT_READ_FAIL: {con['aspen_path']}")
             return penalty
         lo, hi = con.get("lower"), con.get("upper")
         if (lo is not None and val < lo) or (hi is not None and val > hi):
+            _dbg(f"CONSTRAINT_VIOLATED: {con['aspen_path']}={val}")
             return penalty
 
     return tuple(obj_values)
@@ -370,9 +391,11 @@ async def run_optimization(
     tb.register("mutate", tools.mutPolynomialBounded, low=lows, up=highs,
                 eta=20.0, indpb=1.0 / n_var)
     tb.register("select", tools.selNSGA2)
+    debug_log = []
     tb.register("evaluate", _evaluate, manager=manager, session_name=session_name,
                 variables=variables, objectives=objectives,
-                constraints=constraints, weights=weights)
+                constraints=constraints, weights=weights,
+                _debug_log=debug_log)
 
     # Run
     random.seed(42)
@@ -468,6 +491,11 @@ async def run_optimization(
     lines.append(f"\nBest compromise: {_fmt_ind(comp)}")
     lines.append("\nGeneration log:")
     lines += [f"  {l}" for l in log_lines]
+
+    if debug_log:
+        unique_msgs = list(dict.fromkeys(debug_log[:20]))  # first 20 unique
+        lines.append(f"\nDebug ({len(debug_log)} failures):")
+        lines += [f"  {m}" for m in unique_msgs]
 
     if output_dir:
         try:
