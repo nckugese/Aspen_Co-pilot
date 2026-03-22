@@ -1,12 +1,46 @@
 __pycache__/
-  *.pyc
-  *.pyo
-  *.bkp
-  *.apw
-  .env
-  venv/
-  .venv/
+*.pyc
+*.pyo
+.env
+venv/
+.venv/
 .claude/
-  .mcp.json
 .mcp.json
-.bkp
+
+# Aspen Plus temp/working files
+*.apw
+*.appdf
+*.apprj
+*.ads
+*.bks
+*.co1
+*.co2
+*.cod
+*.dfm
+*.dyl
+*.edf
+*.gen
+*.his
+*.ia1
+*.ia2
+*.ikc
+*.in0
+*.inm
+*.inx
+*.itd
+*.jnl
+*.nin
+*.nis
+*.nol
+*.odi
+*.prd
+*.rp1
+*.rp2
+*.scr
+*.sin
+*.sor
+*.sum
+*.for
+*.def
+$*$backup*
+commonshellsettings.xml
