@@ -1,299 +1,320 @@
-"""NSGA-II multi-objective optimization for Aspen Plus simulations.
-
-Uses DEAP to find Pareto-optimal solutions by iteratively setting
-decision variables, running the simulation, and reading objective values.
-"""
+"""NSGA-II multi-objective optimization for Aspen Plus simulations."""
 
 from __future__ import annotations
 
-import random
+import csv
+import json
 import math
 import os
+import random
+import subprocess
+import sys
+import tempfile
+from collections import Counter
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from deap import base, creator, tools, algorithms
+from deap import base, creator, tools
 
 from tools import main_tools
 
 if TYPE_CHECKING:
     from mcp.server.fastmcp import Context
 
+PENALTY = 1e10
+
 
 # ---------------------------------------------------------------------------
-# Helpers
+# Progress window (launched as separate process)
 # ---------------------------------------------------------------------------
 
-def _parse_weights(objectives: list[dict]) -> tuple[float, ...]:
-    """Convert objective directions to DEAP fitness weights."""
-    w = []
-    for obj in objectives:
-        d = obj.get("direction", "minimize").lower()
-        w.append(1.0 if d == "maximize" else -1.0)
-    return tuple(w)
+class _ProgressWindow:
+    """Launches progress_window.py as a subprocess, communicates via JSON file."""
+
+    def __init__(self, total: int, n_gen: int, obj_names: list[str]):
+        self._n_gen = n_gen
+        self._obj_names = obj_names
+        self._total = total
+
+        # Create temp file for state exchange
+        fd, self._state_file = tempfile.mkstemp(suffix=".json", prefix="opt_progress_")
+        os.close(fd)
+
+        # Write initial state
+        self._write_state(0, 0, "Starting...", None, False)
+
+        # Launch the window as an independent GUI process
+        script = os.path.join(os.path.dirname(__file__), "progress_window.py")
+        try:
+            # Use pythonw.exe on Windows for GUI-only process (no console)
+            python = sys.executable
+            if sys.platform == "win32":
+                pythonw = python.replace("python.exe", "pythonw.exe")
+                if os.path.exists(pythonw):
+                    python = pythonw
+            self._proc = subprocess.Popen(
+                [python, script, self._state_file],
+                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if sys.platform == "win32" else 0,
+            )
+        except Exception:
+            self._proc = None
+
+    def _write_state(self, gen, eval_count, status, best_objs, done):
+        state = {
+            "gen": gen, "n_gen": self._n_gen,
+            "eval_count": eval_count, "total": self._total,
+            "status": status, "obj_names": self._obj_names,
+            "best_objs": best_objs, "done": done,
+        }
+        try:
+            with open(self._state_file, "w", encoding="utf-8") as f:
+                json.dump(state, f)
+        except Exception:
+            pass
+
+    def update(self, gen: int, eval_count: int, status: str,
+               best_objs: list[float] | None = None):
+        self._write_state(gen, eval_count, status, best_objs, False)
+
+    def finish(self):
+        self._write_state(0, self._total, "Optimization complete!", None, True)
+        # Cleanup temp file after window closes
+        try:
+            if self._proc:
+                self._proc.wait(timeout=5)
+        except Exception:
+            pass
+        try:
+            os.remove(self._state_file)
+        except Exception:
+            pass
 
 
-def _clip(val: float, lo: float, hi: float) -> float:
-    return max(lo, min(hi, val))
+# ---------------------------------------------------------------------------
+# Naming helpers
+# ---------------------------------------------------------------------------
 
-
-def _short_name(aspen_path: str) -> str:
-    """Extract readable name from an Aspen path."""
-    parts = aspen_path.replace("\\\\", "\\").strip("\\").split("\\")
-    return parts[-1] if parts else aspen_path
+def _short_name(path: str) -> str:
+    parts = path.replace("\\\\", "\\").strip("\\").split("\\")
+    return parts[-1] if parts else path
 
 
 def _unique_names(paths: list[str]) -> list[str]:
-    """Generate unique short names, adding parent context for duplicates."""
     short = [_short_name(p) for p in paths]
-    # Find duplicates
-    from collections import Counter
     counts = Counter(short)
     if max(counts.values()) <= 1:
         return short
-
-    # For duplicates, prepend block/stream name (3rd path segment)
     result = []
     for i, (s, p) in enumerate(zip(short, paths)):
         if counts[s] > 1:
             parts = p.replace("\\\\", "\\").strip("\\").split("\\")
-            # Try to find a block/stream name (usually parts[2])
-            prefix = parts[2] if len(parts) > 2 else str(i)
-            result.append(f"{prefix}_{s}")
+            result.append(f"{parts[2]}_{s}" if len(parts) > 2 else f"{i}_{s}")
         else:
             result.append(s)
     return result
 
 
+def _obj_label(obj: dict) -> str:
+    if "aspen_paths" in obj:
+        expr = obj.get("expression")
+        if expr:
+            return expr
+        return "+".join(_short_name(p) for p in obj["aspen_paths"])
+    return _short_name(obj["aspen_path"])
+
+
+# ---------------------------------------------------------------------------
+# Decode / evaluate
+# ---------------------------------------------------------------------------
+
 def _decode(individual, variables: list[dict]) -> list[float]:
-    """Decode an individual, rounding integer variables and clipping to bounds."""
     decoded = []
     for gene, var in zip(individual, variables):
-        lo, hi = var["lower"], var["upper"]
-        v = _clip(gene, lo, hi)
+        v = max(var["lower"], min(var["upper"], gene))
         if var.get("type") == "int":
             v = round(v)
         decoded.append(v)
     return decoded
 
 
-PENALTY = 1e10
-
-
-def _read_value(manager, session_name: str, aspen_path: str):
-    """Read a numeric value from an Aspen path. Returns float or None."""
-    raw = manager.get_node_value(session_name, aspen_path)
+def _read_value(manager, session_name: str, path: str):
+    raw = manager.get_node_value(session_name, path)
     try:
-        num_str = raw.split("(")[0].strip()
-        return float(num_str)
+        return float(raw.split("(")[0].strip())
     except (ValueError, TypeError):
         return None
 
 
-def _read_objective(manager, session_name: str, obj: dict):
-    """Read an objective value. Supports single path or sum of multiple paths.
+# Safe namespace for expression evaluation (math functions only)
+_EXPR_NAMESPACE = {k: getattr(math, k) for k in
+                   ("sqrt", "log", "log10", "exp", "sin", "cos", "tan",
+                    "pow", "pi", "e", "floor", "ceil", "fabs")}
+_EXPR_NAMESPACE["__builtins__"] = {}
+_EXPR_NAMESPACE["abs"] = abs
+_EXPR_NAMESPACE["max"] = max
+_EXPR_NAMESPACE["min"] = min
 
-    - {"aspen_path": "..."} → single value
-    - {"aspen_paths": ["...", "..."]} → sum of values
-    """
+
+def _read_objective(manager, session_name: str, obj: dict):
     if "aspen_paths" in obj:
-        total = 0.0
+        values = []
         for p in obj["aspen_paths"]:
             v = _read_value(manager, session_name, p)
             if v is None:
                 return None
-            total += v
-        return total
-    else:
-        return _read_value(manager, session_name, obj["aspen_path"])
+            values.append(v)
+        expr = obj.get("expression")
+        if expr:
+            # Build v0, v1, v2... variables for the expression
+            ns = dict(_EXPR_NAMESPACE)
+            for i, val in enumerate(values):
+                ns[f"v{i}"] = val
+            try:
+                return float(eval(expr, ns))
+            except Exception:
+                return None
+        return sum(values)
+    return _read_value(manager, session_name, obj["aspen_path"])
 
 
-def _obj_label(obj: dict) -> str:
-    """Generate a display label for an objective."""
-    if "aspen_paths" in obj:
-        names = [_short_name(p) for p in obj["aspen_paths"]]
-        return "+".join(names)
-    return _short_name(obj["aspen_path"])
-
-
-def _evaluate(individual, manager, session_name: str,
-              variables: list[dict], objectives: list[dict],
-              constraints: list[dict] | None,
-              weights: tuple[float, ...]):
-    """Evaluate one individual: set vars → run → read objectives."""
+def _evaluate(individual, *, manager, session_name, variables, objectives,
+              constraints, weights):
+    penalty = tuple(PENALTY * (-w) for w in weights)
     decoded = _decode(individual, variables)
 
     # Set decision variables
     for val, var in zip(decoded, variables):
         set_val = int(val) if var.get("type") == "int" else val
         result = manager.set_node_value(session_name, var["aspen_path"], value=set_val)
-        if result.startswith("Error") or result.startswith("Node not found"):
-            return tuple(PENALTY * (-w) for w in weights)
+        if result.startswith(("Error", "Node not found")):
+            return penalty
 
     # Run simulation
-    run_result = main_tools.run_simulation(manager, session_name)
+    run_result = main_tools.run_simulation(manager, session_name).lower()
+    if any(k in run_result for k in ("cannot run", "failed")) or \
+       ("error" in run_result and "0 errors" not in run_result):
+        return penalty
 
-    # Check convergence — if "errors" or block issues appear, penalize
-    run_lower = run_result.lower()
-    if ("error" in run_lower and "0 errors" not in run_lower) or \
-       "cannot run" in run_lower or "failed" in run_lower:
-        return tuple(PENALTY * (-w) for w in weights)
-
-    # Read objective values
+    # Read objectives
     obj_values = []
     for obj in objectives:
         v = _read_objective(manager, session_name, obj)
         if v is None:
-            return tuple(PENALTY * (-w) for w in weights)
+            return penalty
         obj_values.append(v)
 
     # Check constraints
-    if constraints:
-        for con in constraints:
-            val = _read_value(manager, session_name, con["aspen_path"])
-            if val is None:
-                return tuple(PENALTY * (-w) for w in weights)
-            lo = con.get("lower")
-            hi = con.get("upper")
-            if lo is not None and val < lo:
-                return tuple(PENALTY * (-w) for w in weights)
-            if hi is not None and val > hi:
-                return tuple(PENALTY * (-w) for w in weights)
+    for con in (constraints or []):
+        val = _read_value(manager, session_name, con["aspen_path"])
+        if val is None:
+            return penalty
+        lo, hi = con.get("lower"), con.get("upper")
+        if (lo is not None and val < lo) or (hi is not None and val > hi):
+            return penalty
 
     return tuple(obj_values)
 
 
 # ---------------------------------------------------------------------------
-# Best compromise selection (normalized Euclidean distance to ideal)
+# Best compromise (normalized distance to ideal point)
 # ---------------------------------------------------------------------------
 
-def _best_compromise(pareto_front, weights):
-    """Select the solution closest to the ideal point in normalized space."""
-    if len(pareto_front) <= 1:
+def _best_compromise(pareto, weights):
+    if len(pareto) <= 1:
         return 0
-
-    n_obj = len(weights)
-    # Gather objective arrays
-    obj_matrix = [ind.fitness.values for ind in pareto_front]
-
-    # Compute min/max per objective for normalization
-    mins = [min(row[i] for row in obj_matrix) for i in range(n_obj)]
-    maxs = [max(row[i] for row in obj_matrix) for i in range(n_obj)]
+    n = len(weights)
+    matrix = [ind.fitness.values for ind in pareto]
+    mins = [min(r[i] for r in matrix) for i in range(n)]
+    maxs = [max(r[i] for r in matrix) for i in range(n)]
 
     best_idx, best_dist = 0, float("inf")
-    for idx, row in enumerate(obj_matrix):
+    for idx, row in enumerate(matrix):
         dist = 0.0
-        for i in range(n_obj):
+        for i in range(n):
             span = maxs[i] - mins[i]
             if span == 0:
                 continue
-            # Ideal is min for minimize (w=-1), max for maximize (w=1)
             ideal = mins[i] if weights[i] < 0 else maxs[i]
-            norm = (row[i] - ideal) / span
-            dist += norm ** 2
+            dist += ((row[i] - ideal) / span) ** 2
         dist = math.sqrt(dist)
         if dist < best_dist:
-            best_dist = dist
-            best_idx = idx
+            best_dist, best_idx = dist, idx
     return best_idx
 
 
 # ---------------------------------------------------------------------------
-# Result saving
+# Save results
 # ---------------------------------------------------------------------------
 
-def _save_results(session_name: str, variables: list[dict], objectives: list[dict],
-                  constraints: list[dict] | None, pop_size: int, n_gen: int,
-                  crossover_prob: float, mutation_prob: float,
-                  pareto, weights, log_lines: list[str],
-                  eval_log: list, output_dir: str) -> str:
-    """Save optimization results: Markdown report + CSV evaluation log."""
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    run_dir = os.path.join(output_dir, f"opt_{session_name}_{timestamp}")
+def _save_results(session_name, variables, objectives, constraints,
+                  pop_size, n_gen, cx_prob, mut_prob,
+                  pareto, weights, log_lines, eval_log, output_dir):
+    run_dir = os.path.join(output_dir,
+                           f"opt_{session_name}_{datetime.now():%Y%m%d_%H%M%S}")
     os.makedirs(run_dir, exist_ok=True)
 
-    filepath = os.path.join(run_dir, "report.md")
-
-    comp_idx = _best_compromise(pareto, weights)
     var_names = _unique_names([v["aspen_path"] for v in variables])
     obj_names = [_obj_label(o) for o in objectives]
     obj_dirs = [o.get("direction", "minimize") for o in objectives]
+    comp_idx = _best_compromise(pareto, weights)
 
-    lines = [
+    # --- Markdown report ---
+    md = [
         f"# Optimization Report — {session_name}",
-        "",
-        f"**Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-        "",
-        "## Settings",
-        "",
-        f"| Parameter | Value |",
-        f"|-----------|-------|",
+        f"\n**Date:** {datetime.now():%Y-%m-%d %H:%M:%S}",
+        "\n## Settings\n",
+        "| Parameter | Value |",
+        "|-----------|-------|",
         f"| Population | {pop_size} |",
         f"| Generations | {n_gen} |",
-        f"| Crossover | {crossover_prob} |",
-        f"| Mutation | {mutation_prob} |",
-        "",
-        "### Decision Variables",
-        "",
-        "| Name | Aspen Path | Lower | Upper | Type |",
-        "|------|------------|-------|-------|------|",
+        f"| Crossover | {cx_prob} |",
+        f"| Mutation | {mut_prob} |",
+        "\n### Decision Variables\n",
+        "| Name | Path | Lower | Upper | Type |",
+        "|------|------|-------|-------|------|",
     ]
     for name, v in zip(var_names, variables):
-        vtype = v.get("type", "float")
-        lines.append(f"| {name} | `{v['aspen_path']}` | {v['lower']} | {v['upper']} | {vtype} |")
+        md.append(f"| {name} | `{v['aspen_path']}` | {v['lower']} | {v['upper']} | {v.get('type', 'float')} |")
 
-    lines += ["", "### Objectives", "",
-              "| Name | Direction | Aspen Path |",
-              "|------|-----------|------------|"]
+    md += ["\n### Objectives\n",
+           "| Name | Direction | Path |",
+           "|------|-----------|------|"]
     for name, d, o in zip(obj_names, obj_dirs, objectives):
-        path = ", ".join(o["aspen_paths"]) if "aspen_paths" in o else o["aspen_path"]
-        lines.append(f"| {name} | {d} | `{path}` |")
+        p = ", ".join(o["aspen_paths"]) if "aspen_paths" in o else o["aspen_path"]
+        md.append(f"| {name} | {d} | `{p}` |")
 
     if constraints:
-        lines += ["", "### Constraints", "",
-                  "| Aspen Path | Lower | Upper |",
-                  "|------------|-------|-------|"]
+        md += ["\n### Constraints\n",
+               "| Path | Lower | Upper |",
+               "|------|-------|-------|"]
         for c in constraints:
-            lo = c.get("lower", "-")
-            hi = c.get("upper", "-")
-            lines.append(f"| `{c['aspen_path']}` | {lo} | {hi} |")
+            md.append(f"| `{c['aspen_path']}` | {c.get('lower', '-')} | {c.get('upper', '-')} |")
 
-    # Pareto front table
-    header_cols = ["#"] + var_names + [f"{n} ({d})" for n, d in zip(obj_names, obj_dirs)] + ["Best"]
-    lines += [
-        "",
-        f"## Pareto Front ({len(pareto)} solutions)",
-        "",
-        "| " + " | ".join(header_cols) + " |",
-        "| " + " | ".join(["---"] * len(header_cols)) + " |",
-    ]
+    # Pareto table
+    hdr = ["#"] + var_names + [f"{n} ({d})" for n, d in zip(obj_names, obj_dirs)] + ["Best"]
+    md += [f"\n## Pareto Front ({len(pareto)} solutions)\n",
+           "| " + " | ".join(hdr) + " |",
+           "| " + " | ".join("---" for _ in hdr) + " |"]
     for idx, ind in enumerate(pareto):
-        decoded = _decode(ind, variables)
         row = [str(idx + 1)]
-        row += [f"{v:.4g}" for v in decoded]
+        row += [f"{v:.4g}" for v in _decode(ind, variables)]
         row += [f"{ind.fitness.values[i]:.4g}" for i in range(len(objectives))]
         row += ["**>>>**" if idx == comp_idx else ""]
-        lines.append("| " + " | ".join(row) + " |")
+        md.append("| " + " | ".join(row) + " |")
 
-    # Generation log
-    lines += ["", "## Generation Log", ""]
-    for l in log_lines:
-        lines.append(f"- {l}")
+    md += ["\n## Generation Log\n"] + [f"- {l}" for l in log_lines]
 
-    with open(filepath, "w", encoding="utf-8") as f:
-        f.write("\n".join(lines) + "\n")
+    with open(os.path.join(run_dir, "report.md"), "w", encoding="utf-8") as f:
+        f.write("\n".join(md) + "\n")
 
-    # Save CSV evaluation log (every evaluation, for plotting)
-    csv_path = os.path.join(run_dir, "evaluations.csv")
-    csv_header = ["gen"] + var_names + obj_names + ["feasible"]
-    with open(csv_path, "w", encoding="utf-8") as f:
-        f.write(",".join(csv_header) + "\n")
+    # --- CSV log ---
+    with open(os.path.join(run_dir, "evaluations.csv"), "w", encoding="utf-8", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["gen"] + var_names + obj_names + ["feasible"])
         for gen_num, decoded, obj_vals, feasible in eval_log:
-            row = [str(gen_num)]
-            row += [f"{v:.6g}" for v in decoded]
-            row += [f"{v:.6g}" for v in obj_vals]
-            row += ["1" if feasible else "0"]
-            f.write(",".join(row) + "\n")
+            writer.writerow([gen_num] + [f"{v:.6g}" for v in decoded]
+                            + [f"{v:.6g}" for v in obj_vals]
+                            + [int(feasible)])
 
     return run_dir
 
@@ -315,185 +336,146 @@ async def run_optimization(
     output_dir: str | None = None,
     ctx: "Context | None" = None,
 ) -> str:
-    """Run NSGA-II multi-objective optimization on an Aspen Plus simulation.
-
-    Returns a formatted string with the Pareto front and best compromise.
-    """
-    # Validate inputs
+    """Run NSGA-II optimization. Returns formatted Pareto front and best compromise."""
+    # Validate
     if not variables:
         return "Error: at least one decision variable is required."
     if not objectives:
         return "Error: at least one objective is required."
-
     for v in variables:
-        if "aspen_path" not in v or "lower" not in v or "upper" not in v:
+        if not all(k in v for k in ("aspen_path", "lower", "upper")):
             return "Error: each variable needs 'aspen_path', 'lower', and 'upper'."
     for o in objectives:
         if "aspen_path" not in o and "aspen_paths" not in o:
             return "Error: each objective needs 'aspen_path' or 'aspen_paths'."
 
-    weights = _parse_weights(objectives)
+    weights = tuple(1.0 if o.get("direction", "minimize").lower() == "maximize" else -1.0
+                    for o in objectives)
     n_var = len(variables)
+    lows = [v["lower"] for v in variables]
+    highs = [v["upper"] for v in variables]
 
-    # --- DEAP setup (use unique names to avoid creator conflicts) ----------
-    fit_name = "FitnessMulti_Opt"
-    ind_name = "Individual_Opt"
-    if hasattr(creator, fit_name):
-        delattr(creator, fit_name)
-    if hasattr(creator, ind_name):
-        delattr(creator, ind_name)
+    # DEAP setup
+    for name in ("_OptFitness", "_OptIndividual"):
+        if hasattr(creator, name):
+            delattr(creator, name)
+    creator.create("_OptFitness", base.Fitness, weights=weights)
+    creator.create("_OptIndividual", list, fitness=creator._OptFitness)
 
-    creator.create(fit_name, base.Fitness, weights=weights)
-    creator.create(ind_name, list, fitness=getattr(creator, fit_name))
+    tb = base.Toolbox()
+    tb.register("individual", tools.initIterate, creator._OptIndividual,
+                lambda: [random.uniform(lo, hi) for lo, hi in zip(lows, highs)])
+    tb.register("population", tools.initRepeat, list, tb.individual)
+    tb.register("mate", tools.cxSimulatedBinaryBounded, low=lows, up=highs, eta=20.0)
+    tb.register("mutate", tools.mutPolynomialBounded, low=lows, up=highs,
+                eta=20.0, indpb=1.0 / n_var)
+    tb.register("select", tools.selNSGA2)
+    tb.register("evaluate", _evaluate, manager=manager, session_name=session_name,
+                variables=variables, objectives=objectives,
+                constraints=constraints, weights=weights)
 
-    toolbox = base.Toolbox()
-
-    # Attribute generators — one per variable
-    for i, var in enumerate(variables):
-        toolbox.register(f"attr_{i}", random.uniform, var["lower"], var["upper"])
-
-    def _init_ind():
-        ind = getattr(creator, ind_name)(
-            getattr(toolbox, f"attr_{i}")() for i in range(n_var)
-        )
-        return ind
-
-    toolbox.register("individual", _init_ind)
-    toolbox.register("population", tools.initRepeat, list, toolbox.individual)
-
-    # Genetic operators
-    toolbox.register("mate", tools.cxSimulatedBinaryBounded,
-                     low=[v["lower"] for v in variables],
-                     up=[v["upper"] for v in variables],
-                     eta=20.0)
-    toolbox.register("mutate", tools.mutPolynomialBounded,
-                     low=[v["lower"] for v in variables],
-                     up=[v["upper"] for v in variables],
-                     eta=20.0, indpb=1.0 / n_var)
-    toolbox.register("select", tools.selNSGA2)
-
-    toolbox.register("evaluate", _evaluate,
-                     manager=manager, session_name=session_name,
-                     variables=variables, objectives=objectives,
-                     constraints=constraints, weights=weights)
-
-    # --- Run NSGA-II -------------------------------------------------------
+    # Run
     random.seed(42)
-    pop = toolbox.population(n=pop_size)
+    pop = tb.population(n=pop_size)
 
-    log_lines = []
-    eval_log = []  # Record every evaluation: (gen, variables..., objectives...)
-
-    # Total evaluations estimate: initial pop + n_gen * pop_size (upper bound)
-    total_evals = pop_size + n_gen * pop_size
+    total_evals = pop_size * (1 + n_gen)
     eval_count = 0
+    log_lines = []
+    eval_log = []
+    best_objs = None
+    obj_labels = [_obj_label(o) for o in objectives]
+    win = _ProgressWindow(total_evals, n_gen, obj_labels)
 
-    def _record(gen_num, individual, fit_values):
-        """Record one evaluation to eval_log."""
-        decoded = _decode(individual, variables)
-        feasible = all(abs(v) < PENALTY * 0.1 for v in fit_values)
-        eval_log.append((gen_num, decoded, list(fit_values), feasible))
+    def _is_feasible(vals):
+        return all(abs(v) < PENALTY * 0.1 for v in vals)
 
-    # Evaluate initial population
-    for ind in pop:
-        ind.fitness.values = toolbox.evaluate(ind)
-        _record(0, ind, ind.fitness.values)
+    def _record_and_update(gen, ind):
+        nonlocal eval_count, best_objs
+        decoded = _decode(ind, variables)
+        vals = ind.fitness.values
+        feasible = _is_feasible(vals)
+        eval_log.append((gen, decoded, list(vals), feasible))
         eval_count += 1
+        # Update best
+        if feasible:
+            if best_objs is None:
+                best_objs = list(vals)
+            else:
+                for i, (w, v, b) in enumerate(zip(weights, vals, best_objs)):
+                    if (w > 0 and v > b) or (w < 0 and v < b):
+                        best_objs[i] = v
+
+    # Initial population
+    for ind in pop:
+        ind.fitness.values = tb.evaluate(ind)
+        _record_and_update(0, ind)
         if ctx:
             await ctx.report_progress(eval_count, total_evals)
-
+        win.update(0, eval_count, f"Initial population ({eval_count}/{pop_size})", best_objs)
     log_lines.append(f"Gen 0: evaluated {len(pop)} individuals")
 
+    # Evolution
     for gen in range(1, n_gen + 1):
-        # Select and clone
-        offspring = toolbox.select(pop, len(pop))
-        offspring = list(map(toolbox.clone, offspring))
+        offspring = list(map(tb.clone, tb.select(pop, len(pop))))
 
-        # Crossover
         for i in range(0, len(offspring) - 1, 2):
             if random.random() < crossover_prob:
-                toolbox.mate(offspring[i], offspring[i + 1])
+                tb.mate(offspring[i], offspring[i + 1])
                 del offspring[i].fitness.values
                 del offspring[i + 1].fitness.values
 
-        # Mutation
-        for mutant in offspring:
+        for mut in offspring:
             if random.random() < mutation_prob:
-                toolbox.mutate(mutant)
-                del mutant.fitness.values
+                tb.mutate(mut)
+                del mut.fitness.values
 
-        # Evaluate individuals with invalid fitness
         invalids = [ind for ind in offspring if not ind.fitness.valid]
-        for ind in invalids:
-            ind.fitness.values = toolbox.evaluate(ind)
-            _record(gen, ind, ind.fitness.values)
-            eval_count += 1
+        for i, ind in enumerate(invalids):
+            ind.fitness.values = tb.evaluate(ind)
+            _record_and_update(gen, ind)
             if ctx:
                 await ctx.report_progress(eval_count, total_evals)
+            win.update(gen, eval_count, f"Gen {gen}: {i+1}/{len(invalids)} evaluated", best_objs)
 
-        # Survivor selection
-        pop = toolbox.select(pop + offspring, pop_size)
-
+        pop = tb.select(pop + offspring, pop_size)
         log_lines.append(f"Gen {gen}/{n_gen}: evaluated {len(invalids)} new")
 
-    # --- Extract Pareto front ----------------------------------------------
-    pareto = tools.sortNondominated(pop, len(pop), first_front_only=True)[0]
+    win.finish()
 
-    # Sort pareto by first objective for consistent display
+    # Extract Pareto front
+    pareto = tools.sortNondominated(pop, len(pop), first_front_only=True)[0]
     pareto.sort(key=lambda ind: ind.fitness.values[0])
 
-    # Build variable/objective short names
     var_names = _unique_names([v["aspen_path"] for v in variables])
-    obj_names = [_obj_label(o) for o in objectives]
     obj_dirs = [o.get("direction", "minimize")[:3] for o in objectives]
+    comp_idx = _best_compromise(pareto, weights)
 
     # Format output
-    lines = [
-        f"Optimization complete: {n_gen} generations, {pop_size} population size",
-        "",
-        f"Pareto Front ({len(pareto)} solutions):",
-    ]
+    def _fmt_ind(ind):
+        d = _decode(ind, variables)
+        vs = ", ".join(f"{n}={v:.4g}" for n, v in zip(var_names, d))
+        os_ = ", ".join(f"{n}={ind.fitness.values[i]:.4g} ({dr})"
+                        for i, (n, dr) in enumerate(zip(obj_labels, obj_dirs)))
+        return f"{vs} → {os_}"
 
+    lines = [f"Optimization complete: {n_gen} generations, {pop_size} population",
+             f"\nPareto Front ({len(pareto)} solutions):"]
     for idx, ind in enumerate(pareto):
-        decoded = _decode(ind, variables)
-        var_str = ", ".join(f"{n}={v:.4g}" for n, v in zip(var_names, decoded))
-        obj_str = ", ".join(
-            f"{n}={ind.fitness.values[i]:.4g} ({d})"
-            for i, (n, d) in enumerate(zip(obj_names, obj_dirs))
-        )
-        lines.append(f"  #{idx + 1}: {var_str} → {obj_str}")
+        marker = " <<<" if idx == comp_idx else ""
+        lines.append(f"  #{idx+1}: {_fmt_ind(ind)}{marker}")
 
-    # Best compromise
-    comp_idx = _best_compromise(pareto, weights)
     comp = pareto[comp_idx]
-    comp_decoded = _decode(comp, variables)
-    lines.append("")
-    lines.append("Best compromise (normalized distance):")
-    var_str = ", ".join(f"{n}={v:.4g}" for n, v in zip(var_names, comp_decoded))
-    obj_str = ", ".join(
-        f"{n}={comp.fitness.values[i]:.4g}"
-        for i, n in enumerate(obj_names)
-    )
-    lines.append(f"  {var_str} → {obj_str}")
+    lines.append(f"\nBest compromise: {_fmt_ind(comp)}")
+    lines.append("\nGeneration log:")
+    lines += [f"  {l}" for l in log_lines]
 
-    # Append generation log
-    lines.append("")
-    lines.append("Generation log:")
-    for l in log_lines:
-        lines.append(f"  {l}")
-
-    # Auto-save results
     if output_dir:
         try:
-            filepath = _save_results(
-                session_name, variables, objectives, constraints,
-                pop_size, n_gen, crossover_prob, mutation_prob,
-                pareto, weights, log_lines, eval_log, output_dir,
-            )
-            lines.append("")
-            lines.append(f"Results saved to: {filepath}")
-        except Exception as exc:
-            lines.append("")
-            lines.append(f"Warning: failed to save results: {exc}")
+            path = _save_results(session_name, variables, objectives, constraints,
+                                 pop_size, n_gen, crossover_prob, mutation_prob,
+                                 pareto, weights, log_lines, eval_log, output_dir)
+            lines.append(f"\nResults saved to: {path}")
+        except Exception as e:
+            lines.append(f"\nWarning: failed to save results: {e}")
 
     return "\n".join(lines)

@@ -574,7 +574,12 @@ async def optimize(
             - upper: Upper bound (float)
             - type: Optional, 'int' for integer variables
         objectives: Objectives, each a dict with keys:
-            - aspen_path: Aspen tree path to read the objective value
+            - aspen_path: Single Aspen path to read the objective value
+            - aspen_paths: List of Aspen paths (use instead of aspen_path for multi-path objectives)
+            - expression: Optional math formula using v0, v1, v2... referencing aspen_paths values.
+                Supports: sqrt, log, log10, exp, sin, cos, abs, pow, max, min, pi, e.
+                If omitted with aspen_paths, defaults to sum.
+                Example: {"aspen_paths": [pathA, pathB], "expression": "v0 / v1", "direction": "maximize"}
             - direction: 'minimize' or 'maximize'
         constraints: Optional constraint list, each a dict with keys:
             - aspen_path: Aspen tree path to read
