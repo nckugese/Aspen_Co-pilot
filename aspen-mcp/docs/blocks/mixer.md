@@ -42,3 +42,4 @@ Combines multiple inlet streams into a single outlet stream. Performs an adiabat
 
 - If no outlet pressure is specified, the mixer uses the lowest inlet stream pressure.
 - Mixer does not require any specs beyond stream connections.
+- `connect_stream` with `port_name='P'` will fail due to fuzzy matching ambiguity with `PS(IN)`/`PS(OUT)`. Always use the full port name `P(OUT)` when connecting the outlet stream.

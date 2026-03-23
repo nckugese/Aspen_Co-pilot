@@ -42,3 +42,4 @@ Splits one inlet stream into multiple outlet streams by fraction. All outlets ha
 
 - Fractions must sum to 1.0. Leave one outlet without a fraction — it becomes the balance stream.
 - Alternatively, you can specify outlet flow rates instead of fractions.
+- `connect_stream` with `port_name='P'` will fail due to fuzzy matching ambiguity with `PS(IN)`/`PS(OUT)`. Always use the full port name `P(OUT)` when connecting outlet streams.

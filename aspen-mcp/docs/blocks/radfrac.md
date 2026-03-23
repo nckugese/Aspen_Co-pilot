@@ -93,3 +93,12 @@ Side duties are rejected on condenser (stage 1) and reboiler (last stage).
 - Feed stage numbered from top (condenser = stage 1).
 - For column with `REBOILER=NONE` and N stages, bottom feed goes to stage N+1.
 - "COLUMN DRIES UP" error = wrong feed conditions or impossible specs.
+- For absorber configuration (`CONDENSER=NONE`, `REBOILER=NONE`): the bottom gas feed must be placed at stage **N+1** (e.g., stage 11 for a 10-stage absorber). Placing it at stage N will cause `check_inputs` to report incomplete.
+- `WD(OUT)` port (water decant) is not in the standard port definitions. `connect_stream` will fuzzy-match `WD` to `VD` incorrectly. Use `add_element` directly instead:
+  ```
+  add_element(session, '\Data\Blocks\COL1\Ports\WD(OUT)', 'STREAM_NAME')
+  ```
+  To disconnect, use `remove_element(session, '\Data\Blocks\COL1\Ports\WD(OUT)', 'STREAM_NAME')`.
+- `BLKOPFREWAT` (free-water): once set to `YES`, it cannot be changed back to `NO` due to coupled internal settings. The only way to revert is to `remove_block` and recreate.
+- Columns with immiscible components (e.g., VAM-water, organic-water) require 3-phase (`NO_PHASE=3`) or free-water (`BLKOPFREWAT=YES`) mode. Running in 2-phase mode will cause non-convergence or "COLUMN DRIES UP" errors.
+- Liquid feeds from high-pressure separators may contain dissolved light gases (C₂H₄, CO₂, etc.). Add a Flash2 degassing step before the column, otherwise the dissolved gases will dominate the distillate and cause "column dries up" on stripping stages.

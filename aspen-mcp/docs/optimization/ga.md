@@ -127,6 +127,10 @@ A tkinter window launches as an independent process (`progress_window.py`) durin
 
 Communication is via a temporary JSON file that the optimizer writes and the window polls every 500ms. The window auto-closes 2 seconds after completion. Works in both terminal and web MCP clients.
 
+## Recommended Workflow
+
+Always run a small test optimization first (e.g., `pop_size=5, n_gen=2`) to verify that the simulation converges and all paths are correct before launching the full optimization with production parameters.
+
 ## Full Example
 
 ```python

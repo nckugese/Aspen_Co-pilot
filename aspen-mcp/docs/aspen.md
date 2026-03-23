@@ -4,7 +4,6 @@ When you need to configure a specific Aspen Plus object, read the corresponding 
 
 ## General Rules
 
-- **Save before running** — Aspen Plus can crash with aggressive parameters. Always `save_simulation` before `run_simulation`.
 - **Check inputs before running** — Always call `check_inputs` before `run_simulation` to catch missing or incomplete inputs.
 - **Block/stream names** — Maximum **8 characters**, no leading underscores.
 - **Block type names** — Use SGXML captions (e.g. `Mixer`, `Flash2`, `RadFrac`) as COM block type identifiers.
