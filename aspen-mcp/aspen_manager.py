@@ -1,9 +1,13 @@
+import logging
 import os
+
 import win32com.client
 import win32com.client.dynamic
 import pythoncom
 
 from searcher import unit_table
+
+logger = logging.getLogger(__name__)
 
 
 class AspenPlusManager:
@@ -29,6 +33,7 @@ class AspenPlusManager:
             app.Visible  # noqa: B018
             return True
         except Exception:
+            logger.debug("Session '%s' COM object is dead, removing", name)
             del self._sessions[name]
             return False
 
@@ -63,6 +68,7 @@ class AspenPlusManager:
             self._sessions[name] = aspen
             return f"Aspen Plus opened successfully. Session: '{name}'"
         except Exception as exc:
+            logger.error("Failed to launch Aspen Plus: %s", exc, exc_info=True)
             return f"Failed to launch Aspen Plus. Error: {exc}"
 
     def close(self, session_name: str = None) -> str:
@@ -75,6 +81,7 @@ class AspenPlusManager:
                 del self._sessions[session_name]
                 return f"Session '{session_name}' closed successfully."
             except Exception as exc:
+                logger.warning("Failed to close session '%s': %s", session_name, exc, exc_info=True)
                 self._sessions.pop(session_name, None)
                 return f"Failed to close session '{session_name}'. Error: {exc}"
 
@@ -89,6 +96,7 @@ class AspenPlusManager:
                 del self._sessions[name]
                 results.append(f"Session '{name}' closed successfully.")
             except Exception as exc:
+                logger.warning("Failed to close session '%s': %s", name, exc, exc_info=True)
                 self._sessions.pop(name, None)
                 results.append(f"Failed to close session '{name}'. Error: {exc}")
         return "\n".join(results)
@@ -152,6 +160,8 @@ class AspenPlusManager:
                         child = elems.Item(i)
                         break
             except Exception:
+                logger.warning("ensure_node: failed to enumerate children at depth %d for '%s'",
+                               depth, "\\".join(parts[:depth+1]), exc_info=True)
                 return None
 
             if child is None:
@@ -176,7 +186,7 @@ class AspenPlusManager:
                 return child
             return elems.Item(elems.Count - 1)
         except Exception:
-            pass
+            logger.debug("_try_create_child: InsertRow/SetLabel failed for '%s'", child_path, exc_info=True)
 
         # Strategy 2: Elements.Add
         try:
@@ -185,7 +195,7 @@ class AspenPlusManager:
             if child is not None:
                 return child
         except Exception:
-            pass
+            logger.debug("_try_create_child: Elements.Add failed for '%s'", child_path, exc_info=True)
 
         return None
 
@@ -211,9 +221,10 @@ class AspenPlusManager:
                 if unit_str:
                     return f"{value} (unit: {unit_str})"
             except Exception:
-                pass
+                logger.debug("Could not read UnitString for '%s'", aspen_path)
             return str(value)
         except Exception as exc:
+            logger.error("Error reading '%s': %s", aspen_path, exc, exc_info=True)
             return f"Error reading '{aspen_path}': {exc}"
 
     def set_node_value(
@@ -248,7 +259,7 @@ class AspenPlusManager:
                 if not node.AttributeValue(7):
                     return f"Node '{aspen_path}' is not enterable."
             except Exception:
-                pass  # Attribute not available — proceed anyway
+                logger.debug("HAP_ENTERABLE not available for '%s'", aspen_path)
 
             # Simple case: value only, no unit/basis change
             if has_value and not has_unit and not has_basis:
@@ -269,6 +280,7 @@ class AspenPlusManager:
                     current_unit = node.UnitString
                     unitcol = unit_table.lookup_unit(current_unit) if current_unit else 0
                 except Exception:
+                    logger.debug("Could not read current UnitString for '%s', defaulting unitcol=0", aspen_path)
                     unitcol = 0
 
             # Dispatch: use SetValueAndUnit when no basis, SetValueUnitAndBasis when basis involved
@@ -284,12 +296,14 @@ class AspenPlusManager:
                 if confirmed_unit:
                     parts.append(confirmed_unit)
             except Exception:
+                logger.debug("Could not read back UnitString after set for '%s'", aspen_path)
                 if has_unit:
                     parts.append(unit)
             if has_basis:
                 parts.append(f"(basis: {basis})")
             return " ".join(parts)
         except Exception as exc:
+            logger.error("Error writing '%s': %s", aspen_path, exc, exc_info=True)
             return f"Error writing '{aspen_path}': {exc}"
 
     def get_node_unit_info(self, session_name: str, aspen_path: str) -> str:
@@ -305,6 +319,7 @@ class AspenPlusManager:
             try:
                 unit_str = node.UnitString
             except Exception:
+                logger.debug("UnitString not available for '%s'", aspen_path)
                 return f"Node '{aspen_path}' has no unit information."
 
             if not unit_str:
@@ -332,6 +347,7 @@ class AspenPlusManager:
                 lines.append(f"  [{i}] {u}{marker}")
             return "\n".join(lines)
         except Exception as exc:
+            logger.error("Error reading unit info for '%s': %s", aspen_path, exc, exc_info=True)
             return f"Error reading unit info for '{aspen_path}': {exc}"
 
     # ------------------------------------------------------------------
@@ -367,6 +383,7 @@ class AspenPlusManager:
             val = node.AttributeValue(attr_num)
             return str(val)
         except Exception as exc:
+            logger.error("Error reading attribute %s on '%s': %s", attribute, aspen_path, exc, exc_info=True)
             return f"Error reading attribute {attribute} on '{aspen_path}': {exc}"
 
     def set_node_attribute(self, session_name: str, aspen_path: str, attribute: int | str, value) -> str:
@@ -400,6 +417,7 @@ class AspenPlusManager:
             confirmed = node.AttributeValue(attr_num)
             return f"Set attribute {attribute} (#{attr_num}) on '{aspen_path}' = {confirmed}"
         except Exception as exc:
+            logger.error("Error setting attribute %s on '%s': %s", attribute, aspen_path, exc, exc_info=True)
             return f"Error setting attribute {attribute} on '{aspen_path}': {exc}"
 
     def _resolve_attr(self, attribute: int | str) -> int | None:
@@ -433,10 +451,12 @@ class AspenPlusManager:
                 try:
                     val = el.Value
                 except Exception:
+                    logger.debug("Could not read value for element %d at '%s'", i, aspen_path)
                     val = None
                 lines.append(f"  [{i}] {name} = {val}")
             return "\n".join(lines)
         except Exception as exc:
+            logger.error("Error listing elements at '%s': %s", aspen_path, exc, exc_info=True)
             return f"Error listing elements at '{aspen_path}': {exc}"
 
     def add_element(self, session_name: str, aspen_path: str, name: str) -> str:
@@ -454,6 +474,7 @@ class AspenPlusManager:
             node.Elements.Add(name)
             return f"Added element '{name}' at '{aspen_path}'."
         except Exception as exc:
+            logger.error("Error adding element '%s' at '%s': %s", name, aspen_path, exc, exc_info=True)
             return f"Error adding element '{name}' at '{aspen_path}': {exc}"
 
     def remove_element(self, session_name: str, aspen_path: str, name: str) -> str:
@@ -468,6 +489,7 @@ class AspenPlusManager:
             node.Elements.Remove(name)
             return f"Removed element '{name}' from '{aspen_path}'."
         except Exception as exc:
+            logger.error("Error removing element '%s' from '%s': %s", name, aspen_path, exc, exc_info=True)
             return f"Error removing element '{name}' from '{aspen_path}': {exc}"
 
     def insert_row(self, session_name: str, aspen_path: str,
@@ -489,6 +511,7 @@ class AspenPlusManager:
             els.InsertRow(dimension, idx)
             return f"Inserted row at '{aspen_path}' dim={dimension} index={idx}."
         except Exception as exc:
+            logger.error("Error inserting row at '%s': %s", aspen_path, exc, exc_info=True)
             return f"Error inserting row at '{aspen_path}': {exc}"
 
     def set_label(self, session_name: str, aspen_path: str,
@@ -508,6 +531,7 @@ class AspenPlusManager:
             els.SetLabel(dimension, index, False, label)
             return f"Set label '{label}' at '{aspen_path}' dim={dimension} index={index}."
         except Exception as exc:
+            logger.error("Error setting label at '%s': %s", aspen_path, exc, exc_info=True)
             return f"Error setting label at '{aspen_path}': {exc}"
 
     def remove_row(self, session_name: str, aspen_path: str,
@@ -531,4 +555,5 @@ class AspenPlusManager:
             els.RemoveRow(dimension, index)
             return f"Removed row [{index}] '{name}' from '{aspen_path}'."
         except Exception as exc:
+            logger.error("Error removing row %d from '%s': %s", index, aspen_path, exc, exc_info=True)
             return f"Error removing row {index} from '{aspen_path}': {exc}"

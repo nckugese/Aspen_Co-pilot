@@ -6,9 +6,31 @@ No dynamic activation/deactivation — every tool is always available.
 
 from __future__ import annotations
 
+import logging
 import os
 
 from mcp.server.fastmcp import FastMCP, Context
+
+# ---------------------------------------------------------------------------
+# Logging setup — writes to aspen_mcp.log next to server.py
+# Only logs from our own modules (aspen_manager, tools, searcher) go to file.
+# MCP framework noise is suppressed.
+# ---------------------------------------------------------------------------
+_LOG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "aspen_mcp.log")
+
+_file_handler = logging.FileHandler(_LOG_FILE, encoding="utf-8")
+_file_handler.setLevel(logging.DEBUG)
+_file_handler.setFormatter(logging.Formatter("%(asctime)s %(name)s %(levelname)s %(message)s"))
+
+for _logger_name in ("aspen_manager", "tools"):
+    _logger = logging.getLogger(_logger_name)
+    _logger.setLevel(logging.DEBUG)
+    _logger.addHandler(_file_handler)
+
+# searcher only logs WARNING+ (startup DEBUG is too noisy)
+_searcher_logger = logging.getLogger("searcher")
+_searcher_logger.setLevel(logging.WARNING)
+_searcher_logger.addHandler(_file_handler)
 
 from aspen_manager import AspenPlusManager
 from searcher import DefinitionSearcher
@@ -109,6 +131,7 @@ def get_value(
     stream_type: str = None,
     property_name: str = None,
     extra_params: dict = None,
+    paths: list[str] = None,
 ) -> str:
     """Read a value from Aspen Plus. Three ways to specify the target:
 
@@ -116,8 +139,16 @@ def get_value(
     2. Block lookup:  get_value(session, block_name='B1', block_type='RadFrac', property_name='reflux_ratio')
     3. Stream lookup: get_value(session, stream_name='S1', stream_type='MATERIAL', property_name='temperature')
 
+    Batch mode — pass paths to read multiple values in one call:
+      paths: ['\\Data\\Blocks\\B1\\Output\\B_TEMP', '\\Data\\Blocks\\B1\\Output\\QCALC']
+
     Use search_properties to find available block_type/stream_type and property_name values.
     """
+    if paths:
+        results = []
+        for p in paths:
+            results.append(f"{p}: {manager.get_node_value(session_name, p)}")
+        return "\n".join(results)
     return value_tools.get_value(
         manager, searcher, session_name,
         aspen_path=aspen_path,
@@ -140,6 +171,7 @@ def set_value(
     stream_type: str = None,
     property_name: str = None,
     extra_params: dict = None,
+    items: list[dict] = None,
 ) -> str:
     """Set a value in Aspen Plus. Three ways to specify the target:
 
@@ -153,8 +185,13 @@ def set_value(
       - basis only:  changes the basis, e.g. 'MASS' or 'MOLE'
       - any combination: changes all specified fields at once
 
+    Batch mode — pass items to set multiple values in one call:
+      items: [{"path": "\\...\\TEMP", "value": "80", "unit": "C"}, {"path": "\\...\\PRES", "value": "1", "unit": "atm"}]
+
     Uses SetValueUnitAndBasis under the hood for unit/basis changes.
     """
+    if items:
+        return value_tools.batch_set_values(manager, session_name, items)
     return value_tools.set_value(
         manager, searcher, session_name,
         value=value, unit=unit, basis=basis,
@@ -216,8 +253,21 @@ def list_node_children(session_name: str, aspen_path: str) -> str:
 # ==================================================================
 
 @mcp.tool()
-def place_block(session_name: str, block_name: str, block_type: str) -> str:
-    """Place a new block on the flowsheet"""
+def place_block(
+    session_name: str,
+    block_name: str = None, block_type: str = None,
+    blocks: list[dict] = None,
+) -> str:
+    """Place block(s) on the flowsheet.
+
+    Single: place_block(session, block_name='R1', block_type='RCSTR')
+    Batch:  place_block(session, blocks=[{"name": "R1", "type": "RCSTR"}, {"name": "COL1", "type": "RadFrac"}])
+    """
+    if blocks:
+        results = []
+        for b in blocks:
+            results.append(flowsheet_tools.place_block(manager, searcher, session_name, b["name"], b["type"]))
+        return "\n".join(results)
     return flowsheet_tools.place_block(manager, searcher, session_name, block_name, block_type)
 
 
@@ -228,8 +278,21 @@ def remove_block(session_name: str, block_name: str) -> str:
 
 
 @mcp.tool()
-def place_stream(session_name: str, stream_name: str, stream_type: str) -> str:
-    """Place a new stream on the flowsheet"""
+def place_stream(
+    session_name: str,
+    stream_name: str = None, stream_type: str = "MATERIAL",
+    streams: list[dict] = None,
+) -> str:
+    """Place stream(s) on the flowsheet.
+
+    Single: place_stream(session, stream_name='FEED', stream_type='MATERIAL')
+    Batch:  place_stream(session, streams=[{"name": "FEED"}, {"name": "PROD", "type": "MATERIAL"}])
+    """
+    if streams:
+        results = []
+        for s in streams:
+            results.append(flowsheet_tools.place_stream(manager, searcher, session_name, s["name"], s.get("type", "MATERIAL")))
+        return "\n".join(results)
     return flowsheet_tools.place_stream(manager, searcher, session_name, stream_name, stream_type)
 
 
@@ -240,8 +303,27 @@ def remove_stream(session_name: str, stream_name: str) -> str:
 
 
 @mcp.tool()
-def connect_stream(session_name: str, block_name: str, stream_name: str, port_name: str, block_type: str) -> str:
-    """Connect a stream to a block port"""
+def connect_stream(
+    session_name: str,
+    block_name: str = None, stream_name: str = None,
+    port_name: str = None, block_type: str = None,
+    connections: list[dict] = None,
+) -> str:
+    """Connect stream(s) to block port(s).
+
+    Single: connect_stream(session, block_name='R1', stream_name='FEED', port_name='F(IN)', block_type='RCSTR')
+    Batch:  connect_stream(session, connections=[
+                {"stream": "FEED", "block": "R1", "port": "F(IN)", "block_type": "RCSTR"},
+                {"stream": "PROD", "block": "R1", "port": "P(OUT)", "block_type": "RCSTR"}])
+    """
+    if connections:
+        results = []
+        for c in connections:
+            results.append(flowsheet_tools.connect_stream(
+                manager, searcher, session_name,
+                c["block"], c["stream"], c["port"], c.get("block_type"),
+            ))
+        return "\n".join(results)
     return flowsheet_tools.connect_stream(manager, searcher, session_name, block_name, stream_name, port_name, block_type)
 
 
@@ -262,12 +344,24 @@ def set_property_method(session_name: str, method: str) -> str:
 
 
 @mcp.tool()
-def add_component(session_name: str, component_id: str) -> str:
+def add_component(
+    session_name: str,
+    component_id: str = None,
+    components: list[str] = None,
+) -> str:
     """Add a component to the simulation component list (e.g. WATER, ETHANOL, METHANOL).
 
     Accepts any component name, synonym, CAS number, or short ID.
     Long names are auto-resolved via the Aspen databank.
+
+    Single: add_component(session, component_id='WATER')
+    Batch:  add_component(session, components=['WATER', 'ETHANOL', 'METHANOL'])
     """
+    if components:
+        results = []
+        for comp in components:
+            results.append(_add_comp(manager, session_name, comp))
+        return "\n".join(results)
     return _add_comp(manager, session_name, component_id)
 
 

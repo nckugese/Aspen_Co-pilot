@@ -98,3 +98,30 @@ def set_value(
 
     result = manager.set_node_value(session_name, path, value=value, unit=unit, basis=basis)
     return f"[Note: {hint}]\n{result}" if hint else result
+
+
+def batch_set_values(
+    manager: AspenPlusManager,
+    session_name: str,
+    items: list[dict],
+) -> str:
+    """Set multiple values in one call.
+
+    Args:
+        items: [{"path": "\\Data\\...", "value": "100", "unit": "C"}, ...]
+               Each item needs "path" and at least one of "value", "unit", "basis".
+    """
+    results = []
+    for item in items:
+        path = item.get("path")
+        if not path:
+            results.append("Error: missing 'path'")
+            continue
+        r = manager.set_node_value(
+            session_name, path,
+            value=item.get("value"),
+            unit=item.get("unit"),
+            basis=item.get("basis"),
+        )
+        results.append(r)
+    return "\n".join(results)

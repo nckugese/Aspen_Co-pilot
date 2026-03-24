@@ -5,7 +5,10 @@ reinit / run / save / list_node_children contain COM logic directly.
 
 from __future__ import annotations
 
+import logging
 import os
+
+logger = logging.getLogger(__name__)
 
 
 def open_aspen_plus(manager, file_path: str) -> str:
@@ -50,6 +53,7 @@ def create_new_simulation(manager, project_name: str, destination_folder: str = 
     try:
         shutil.copy2(template, dest_path)
     except Exception as exc:
+        logger.error("Failed to copy template to '%s': %s", dest_path, exc, exc_info=True)
         return f"Failed to copy template: {exc}"
 
     # Open the new simulation
@@ -76,6 +80,7 @@ def reinit_simulation(manager, session_name: str) -> str:
         app.Reinit()
         return f"Simulation '{session_name}' reinitialized."
     except Exception as exc:
+        logger.error("Failed to reinitialize '%s': %s", session_name, exc, exc_info=True)
         return f"Failed to reinitialize simulation '{session_name}'. Error: {exc}"
 
 
@@ -103,7 +108,7 @@ def run_simulation(manager, session_name: str) -> str:
                             "Use check_inputs to see what is missing."
                         )
             except Exception:
-                pass  # If status check fails, fall through to try running
+                logger.debug("COMPSTATUS check failed for '%s', proceeding to run", session_name)
 
         app.Run2()
 
@@ -119,6 +124,7 @@ def run_simulation(manager, session_name: str) -> str:
                 msg += "\n\n" + convergence_report
         return msg
     except Exception as exc:
+        logger.error("Failed to run simulation '%s': %s", session_name, exc, exc_info=True)
         return f"Failed to run simulation '{session_name}'. Error: {exc}"
 
 
@@ -144,6 +150,7 @@ def _check_run_status(app) -> str:
             return ""
         return "Run status message:\n  " + "\n  ".join(lines)
     except Exception:
+        logger.debug("_check_run_status failed", exc_info=True)
         return ""
 
 
@@ -195,12 +202,14 @@ def _check_block_errors(app) -> str:
                     entry += f"\n    {detail}"
                 errors.append(entry)
             except Exception:
+                logger.debug("Failed to read error info for block %d", i, exc_info=True)
                 continue
 
         if not errors:
             return ""
         return "Block errors:\n" + "\n".join(errors)
     except Exception:
+        logger.debug("_check_block_errors failed", exc_info=True)
         return ""
 
 
@@ -250,10 +259,12 @@ def _check_loop_convergence(app) -> str:
 
                 lines.append(f"  {solver_name}: {status} in {tot_iter} iterations{tail_str}")
             except Exception:
+                logger.debug("Failed to read convergence data for '%s'", solver_name, exc_info=True)
                 lines.append(f"  {solver_name}: could not read convergence data")
 
         return "\n".join(lines) if len(lines) > 1 else ""
     except Exception:
+        logger.debug("_check_loop_convergence failed", exc_info=True)
         return ""
 
 
@@ -270,6 +281,7 @@ def save_simulation(manager, session_name: str, file_path: str = None) -> str:
             app.Save()
             return f"Session '{session_name}' saved."
     except Exception as exc:
+        logger.error("Failed to save session '%s': %s", session_name, exc, exc_info=True)
         return f"Failed to save session '{session_name}'. Error: {exc}"
 
 
@@ -288,6 +300,7 @@ def check_inputs(manager, session_name: str) -> str:
         try:
             result = node.NextIncomplete(64)  # HAP_INPUT_INCOMPLETE
         except Exception:
+            logger.debug("NextIncomplete iteration ended", exc_info=True)
             break  # no more incomplete items
         # COM returns (path_or_node, code) tuple
         if isinstance(result, tuple):
@@ -317,6 +330,7 @@ def check_inputs(manager, session_name: str) -> str:
             try:
                 prompt = item.AttributeValue(19)  # HAP_PROMPT
             except Exception:
+                logger.debug("Could not read HAP_PROMPT for '%s'", name)
                 prompt = ""
             if prompt:
                 incomplete.append(f"  - {name}: {prompt}")
@@ -377,6 +391,7 @@ def list_node_children(manager, session_name: str, aspen_path: str) -> str:
                 if name is None:
                     name = f"[{i}]"
             except Exception:
+                logger.debug("Could not read name for child %d at '%s'", i, aspen_path)
                 name = f"[{i}]"
             try:
                 val = child.Value
@@ -388,11 +403,14 @@ def list_node_children(manager, session_name: str, aspen_path: str) -> str:
                         else:
                             children.append(f"  {name} = None")
                     except Exception:
+                        logger.debug("Could not read sub-elements for '%s' at '%s'", name, aspen_path)
                         children.append(f"  {name} = None")
                 else:
                     children.append(f"  {name} = {val}")
             except Exception:
+                logger.debug("Could not read value for '%s' at '%s'", name, aspen_path)
                 children.append(f"  {name}/")
         return f"Children of '{aspen_path}' ({els.Count}):\n" + "\n".join(children)
     except Exception as exc:
+        logger.error("Error listing '%s': %s", aspen_path, exc, exc_info=True)
         return f"Error listing '{aspen_path}': {exc}"

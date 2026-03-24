@@ -6,6 +6,10 @@ add_component calls manager.get_app() and does COM operations directly.
 
 from __future__ import annotations
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 def _reconcile_binary_interactions(app):
     """Trigger databank retrieval for all binary interaction parameter sets."""
@@ -14,7 +18,7 @@ def _reconcile_binary_interactions(app):
     try:
         app.Reconcile(1 | 1048576 | 2097152)
     except Exception:
-        pass
+        logger.debug("App-level Reconcile failed (expected side-effect call)", exc_info=True)
     try:
         bi_node = app.Tree.FindNode(
             r"\Data\Properties\Parameters\Binary Interaction"
@@ -26,9 +30,9 @@ def _reconcile_binary_interactions(app):
                     if inp is not None:
                         inp.Reconcile(1)
                 except Exception:
-                    pass
+                    logger.debug("Binary interaction reconcile failed for set %d", i)
     except Exception:
-        pass
+        logger.debug("Failed to reconcile binary interactions", exc_info=True)
 
 
 def get_property_method(manager, session_name: str) -> str:
@@ -121,12 +125,13 @@ def add_component(manager, session_name: str, component_id: str) -> str:
             if dbname:
                 resolved += f", dbname={dbname.Value}"
         except Exception:
-            pass
+            logger.debug("Could not read back resolved names for component '%s'", label)
 
         if needs_aname:
             return f"Component '{label}' added (from '{component_id}'{resolved})."
         return f"Component '{label}' added{resolved}."
     except Exception as exc:
+        logger.error("Failed to add component '%s': %s", component_id, exc, exc_info=True)
         return f"Failed to add component '{component_id}': {exc}"
 
 
@@ -150,6 +155,7 @@ def remove_component(manager, session_name: str, component_id: str) -> str:
         _reconcile_binary_interactions(app)
         return f"Component '{component_id}' removed."
     except Exception as exc:
+        logger.error("Failed to remove component '%s': %s", component_id, exc, exc_info=True)
         return f"Failed to remove component '{component_id}': {exc}"
 
 
@@ -184,6 +190,7 @@ def add_side_duty(
             f"stage {stage} = {duty}."
         )
     except Exception as exc:
+        logger.error("Failed to add side duty on '%s' stage %d: %s", block_name, stage, exc, exc_info=True)
         return f"Failed to add side duty on '{block_name}' stage {stage}: {exc}"
 
 
@@ -219,4 +226,5 @@ def remove_side_duty(
         elems.RemoveRow(0, target_idx)
         return f"Removed side duty on block '{block_name}' stage {stage}."
     except Exception as exc:
+        logger.error("Failed to remove side duty on '%s' stage %d: %s", block_name, stage, exc, exc_info=True)
         return f"Failed to remove side duty on '{block_name}' stage {stage}: {exc}"

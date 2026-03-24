@@ -6,8 +6,11 @@ and uses the searcher for type/port resolution.
 
 from __future__ import annotations
 
+import logging
 import time
 from typing import TYPE_CHECKING
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from aspen_manager import AspenPlusManager
@@ -40,6 +43,7 @@ def place_block(
         time.sleep(0.5)
         return f"Block '{block_name}' ({block_type}) placed."
     except Exception as exc:
+        logger.error("Failed to place block '%s': %s", block_name, exc, exc_info=True)
         return f"Failed to place block '{block_name}': {exc}"
 
 
@@ -52,6 +56,7 @@ def remove_block(manager: AspenPlusManager, session_name: str, block_name: str) 
         app.Tree.FindNode("\\Data\\Blocks").Elements.Remove(block_name)
         return f"Block '{block_name}' removed."
     except Exception as exc:
+        logger.error("Failed to remove block '%s': %s", block_name, exc, exc_info=True)
         return f"Failed to remove block '{block_name}': {exc}"
 
 
@@ -74,6 +79,7 @@ def place_stream(
         app.Tree.FindNode("\\Data\\Streams").Elements.Add(f"{stream_name}!{stream_type}")
         return f"Stream '{stream_name}' ({stream_type}) placed."
     except Exception as exc:
+        logger.error("Failed to place stream '%s': %s", stream_name, exc, exc_info=True)
         return f"Failed to place stream '{stream_name}': {exc}"
 
 
@@ -86,6 +92,7 @@ def remove_stream(manager: AspenPlusManager, session_name: str, stream_name: str
         app.Tree.FindNode("\\Data\\Streams").Elements.Remove(stream_name)
         return f"Stream '{stream_name}' removed."
     except Exception as exc:
+        logger.error("Failed to remove stream '%s': %s", stream_name, exc, exc_info=True)
         return f"Failed to remove stream '{stream_name}': {exc}"
 
 
@@ -114,4 +121,7 @@ def connect_stream(
         blocks.Elements(block_name).Elements("Ports").Elements(port_name).Elements.Add(stream_name)
         return f"Stream '{stream_name}' connected to {block_name} port {port_name}."
     except Exception as exc:
+        logger.error("Failed to connect stream '%s' to %s:%s: %s", stream_name, block_name, port_name, exc, exc_info=True)
         return f"Failed to connect stream '{stream_name}' to {block_name}:{port_name}: {exc}"
+
+

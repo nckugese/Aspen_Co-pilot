@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import json
+import logging
 import math
 import os
 import random
@@ -17,6 +18,8 @@ from typing import TYPE_CHECKING
 from deap import base, creator, tools
 
 from tools import main_tools
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from mcp.server.fastmcp import Context
@@ -57,6 +60,7 @@ class _ProgressWindow:
                 creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if sys.platform == "win32" else 0,
             )
         except Exception:
+            logger.warning("Failed to launch progress window subprocess", exc_info=True)
             self._proc = None
 
     def _write_state(self, gen, eval_count, status, best_objs, done):
@@ -70,7 +74,7 @@ class _ProgressWindow:
             with open(self._state_file, "w", encoding="utf-8") as f:
                 json.dump(state, f)
         except Exception:
-            pass
+            logger.debug("Failed to write progress state file", exc_info=True)
 
     def update(self, gen: int, eval_count: int, status: str,
                best_objs: list[float] | None = None):
@@ -83,11 +87,11 @@ class _ProgressWindow:
             if self._proc:
                 self._proc.wait(timeout=5)
         except Exception:
-            pass
+            logger.debug("Progress window process did not exit cleanly", exc_info=True)
         try:
             os.remove(self._state_file)
         except Exception:
-            pass
+            logger.debug("Could not remove progress state file: %s", self._state_file)
 
 
 # ---------------------------------------------------------------------------
@@ -172,6 +176,7 @@ def _read_objective(manager, session_name: str, obj: dict):
             try:
                 return float(eval(expr, ns))
             except Exception:
+                logger.warning("Expression eval failed: '%s' with values %s", expr, values, exc_info=True)
                 return None
         return sum(values)
     return _read_value(manager, session_name, obj["aspen_path"])
@@ -190,7 +195,7 @@ def _evaluate(individual, *, manager, session_name, variables, objectives,
     for val, var in zip(decoded, variables):
         set_val = int(val) if var.get("type") == "int" else val
         result = manager.set_node_value(session_name, var["aspen_path"], value=set_val)
-        if result.startswith(("Error", "Node not found")):
+        if not result.startswith("Set "):
             _dbg(f"SET_FAIL: {var['aspen_path']}={set_val} → {result}")
             return penalty
 
@@ -200,6 +205,7 @@ def _evaluate(individual, *, manager, session_name, variables, objectives,
     try:
         app.Run2()
     except Exception as exc:
+        logger.debug("Optimization Run2() failed: %s", exc)
         _dbg(f"RUN_FAIL: {exc}")
         return penalty
 
@@ -211,7 +217,7 @@ def _evaluate(individual, *, manager, session_name, variables, objectives,
             _dbg(f"STATUS_FAIL: {status_msg}")
             return penalty
     except Exception:
-        pass
+        logger.debug("Could not check run status during optimization eval", exc_info=True)
 
     # Read objectives
     obj_values = []
@@ -504,6 +510,7 @@ async def run_optimization(
                                  pareto, weights, log_lines, eval_log, output_dir)
             lines.append(f"\nResults saved to: {path}")
         except Exception as e:
+            logger.error("Failed to save optimization results: %s", e, exc_info=True)
             lines.append(f"\nWarning: failed to save results: {e}")
 
     return "\n".join(lines)

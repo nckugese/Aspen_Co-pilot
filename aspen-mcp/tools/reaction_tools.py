@@ -13,6 +13,10 @@ Key COM patterns for 2D tables (COEF, COEF1, EXPONENT, EXPONENT1):
 
 from __future__ import annotations
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 _REACTIONS_BASE = r"\Data\Reactions\Reactions"
 
 
@@ -54,6 +58,7 @@ def _create_2d_table_labels(app, table_path: str,
                         target_idx = i
                         break
                 except Exception:
+                    logger.debug("Could not read label at index %d in '%s'", i, table_path)
                     continue
             if target_idx is None:
                 continue
@@ -62,7 +67,7 @@ def _create_2d_table_labels(app, table_path: str,
         try:
             els.SetLabel(1, target_idx, False, substream)
         except Exception:
-            pass  # dim1 may already be set from auto-expansion
+            logger.debug("dim1 SetLabel skipped for '%s' (likely auto-expanded)", table_path)
 
     return None
 
@@ -127,6 +132,7 @@ def add_reaction_set(
             f"Use add_reaction to add reactions to this set."
         )
     except Exception as exc:
+        logger.error("Failed to create reaction set '%s': %s", reaction_set_name, exc, exc_info=True)
         return f"Failed to create reaction set '{reaction_set_name}': {exc}"
 
 
@@ -147,6 +153,7 @@ def remove_reaction_set(manager, session_name: str, reaction_set_name: str) -> s
                 return f"Reaction set '{reaction_set_name}' removed."
         return f"Reaction set '{reaction_set_name}' not found."
     except Exception as exc:
+        logger.error("Failed to remove reaction set '%s': %s", reaction_set_name, exc, exc_info=True)
         return f"Failed to remove reaction set '{reaction_set_name}': {exc}"
 
 
@@ -262,6 +269,7 @@ def add_reaction(
         return "\n".join(lines)
 
     except Exception as exc:
+        logger.error("Failed to add reaction %s to '%s': %s", rxn, reaction_set_name, exc, exc_info=True)
         return f"Failed to add reaction {rxn} to '{reaction_set_name}': {exc}"
 
 
@@ -319,10 +327,11 @@ def remove_reaction(
                     try:
                         els.RemoveRow(0, i)
                     except Exception:
-                        pass
+                        logger.debug("Could not remove reaction %s from table '%s'", rxn, table)
                     break
 
         return f"Reaction {rxn} removed from '{reaction_set_name}'."
 
     except Exception as exc:
+        logger.error("Failed to remove reaction %s from '%s': %s", rxn, reaction_set_name, exc, exc_info=True)
         return f"Failed to remove reaction {rxn} from '{reaction_set_name}': {exc}"

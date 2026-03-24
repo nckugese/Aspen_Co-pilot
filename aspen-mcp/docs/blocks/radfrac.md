@@ -39,6 +39,7 @@ Rigorous multi-stage vapor-liquid fractionation column with condenser and reboil
 | `\Data\Blocks\{name}\Input\PRES1` | float | Top stage pressure |
 | `\Data\Blocks\{name}\Input\STAGE_PRES\1` | float | Top stage pressure (alternative path) |
 | `\Data\Blocks\{name}\Input\DP_STAGE` | float | Pressure drop per stage |
+| `\Data\Blocks\{name}\Input\CALC_MODE` | string | Calculation mode: `EQUILIBRIUM` (default), `RIG-RATE` (rate-based) |
 
 > RadFrac requires exactly **2 operating specs**. Common combinations:
 > - Reflux ratio (`BASIS_RR`) + Boilup ratio (`BASIS_BR`)

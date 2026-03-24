@@ -40,6 +40,65 @@ When the system contains immiscible liquids (e.g., water + organic), enable 3-ph
 - "LIQUID-LIQUID PHASE SPLIT CALC. FAILED TO CONVERGE" often means the stage range (`TRAY2`) is too narrow — expand to cover the full column (1 to NSTAGE).
 - Unreasonable distillate/bottoms rates can prevent convergence. Adjust operating specs to physically realistic values.
 
+## Column Internals (Tray/Packing Sizing)
+
+Column Internals allow hydraulic sizing and rating of trays or packings. They require the simulation to be **run first** before adding internals.
+
+### Setup Steps
+
+1. Run simulation first (equilibrium): `run_simulation(session)`
+2. Add Column Internal: `add_element(session, '\Data\Blocks\{name}\Subobjects\Column Internals', 'INT-1')`
+3. Add Sections: `add_element(session, '\Data\Blocks\{name}\Subobjects\Column Internals\INT-1\Subobjects\Sections', 'CS-1')`
+4. Set section stage range and properties (see paths below)
+
+### Rate-Based Setup
+
+Rating mode requires a diameter value. To get it automatically, first run with Interactive Sizing, then switch to Rating:
+
+1. Run simulation (equilibrium) with `INTER-SIZING` to calculate diameters
+2. Switch to rating + rate-based:
+   - `set_value(session, aspen_path='\Data\Blocks\{name}\Input\CALC_MODE', value='RIG-RATE')`
+   - `set_value(session, aspen_path='...\CA_SIZING\{int}\{sec}', value='RATING')` for each section
+   - `set_value(session, aspen_path='...\CA_RATE_BASE\{int}\{sec}', value='YES')` for each section
+3. Run simulation: `run_simulation(session)`
+
+> **Important:** `RATING` mode requires `CA_DIAM` to have a value. If you add internals directly as `RATING` without running `INTER-SIZING` first, the diameter will be empty and the simulation will fail. Either run sizing first or set `CA_DIAM` manually.
+
+### Path Pattern
+
+Column Internal properties use a **nested table path**:
+```
+\Data\Blocks\{name}\Subobjects\Column Internals\{int_name}\Input\{property}\{int_name}\{section_name}
+```
+Example: `\Data\Blocks\COL1\Subobjects\Column Internals\INT-1\Input\CA_STAGE1\INT-1\CS-1`
+
+### Section Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `CA_SIZING\{int}\{sec}` | string | Mode: `INTER-SIZING` (Interactive sizing), `RATING` |
+| `CA_STAGE1\{int}\{sec}` | int | Start stage |
+| `CA_STAGE2\{int}\{sec}` | int | End stage (cannot = NSTAGE if reboiler exists) |
+| `CA_INTERNAL\{int}\{sec}` | string | Internal type: `TRAY`, `PACKED` |
+| `CA_TRAYTYPE\{int}\{sec}` | string | Tray type: `SIEVE`, `VALVE`, `BUBBLE-CAP` |
+| `CA_TRAY_SPC\{int}\{sec}` | float | Tray spacing |
+| `CA_DIAM\{int}\{sec}` | float | Column diameter |
+| `CA_NPASS\{int}\{sec}` | int | Number of passes |
+| `CA_RATE_BASE\{int}\{sec}` | string | Rate-based for this section: `YES`, `NO` |
+| `CA_PACKTYPE\{int}\{sec}` | string | Packing type (when PACKED) |
+| `CA_PACK_MAT\{int}\{sec}` | string | Packing material |
+| `CA_PACK_SIZE\{int}\{sec}` | string | Packing size |
+| `CA_PACK_HT\{int}\{sec}` | float | Packing height |
+
+> **End stage constraint:** If the column has a reboiler, the last section's end stage must be ≤ NSTAGE - 1 (e.g., 29 for a 30-stage column). Setting it to NSTAGE gives error: "End Stage=Number of Stages is not allowed unless Reboiler=None or Reboiler Duty=0".
+
+### Listing & Removing
+
+- List internals: `list_elements(session, '\Data\Blocks\{name}\Subobjects\Column Internals')`
+- List sections: `list_elements(session, '\Data\Blocks\{name}\Subobjects\Column Internals\{int}\Subobjects\Sections')`
+- Remove section: `remove_element(session, '...\Sections', 'CS-1')`
+- Remove internal: `remove_element(session, '...\Column Internals', 'INT-1')`
+
 ## Block-Specific Advanced Inputs
 
 | Path | Type | Description |
