@@ -1,34 +1,53 @@
 """Implementations for flowsheet category tools.
 
-Each function calls manager.get_app() to get the COM object directly,
-and uses the searcher for type/port resolution.
+Each function calls manager.get_app() to get the COM object directly.
+Port resolution uses a simple JSON lookup from block_ports.json.
 """
 
 from __future__ import annotations
 
+import json
 import logging
 import time
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from aspen_manager import AspenPlusManager
-    from searcher.definition_searcher import DefinitionSearcher
+
+# Load port definitions from JSON (once at import time)
+_PORTS_JSON = Path(__file__).resolve().parent.parent / "searcher" / "block_ports.json"
+_PORTS: dict[str, list[str]] = {}
+if _PORTS_JSON.exists():
+    with open(_PORTS_JSON, encoding="utf-8") as f:
+        _PORTS = json.load(f)
+
+
+def _resolve_port(block_type: str, port_name: str) -> str | None:
+    """Resolve a port name using block_ports.json. Returns matched port or None."""
+    ports = _PORTS.get(block_type, [])
+    if not ports:
+        return None
+    # Exact match
+    if port_name in ports:
+        return port_name
+    # Case-insensitive match
+    upper = port_name.upper()
+    for p in ports:
+        if p.upper() == upper:
+            return p
+    return None
 
 
 def place_block(
     manager: AspenPlusManager,
-    searcher: DefinitionSearcher,
     session_name: str,
     block_name: str,
     block_type: str,
 ) -> str:
     """Place a new block on the flowsheet."""
-    result = searcher.resolve_block_type(block_type)
-    if result.matched:
-        block_type = result.value
-
     app = manager.get_app(session_name)
     if app is None:
         return f"No active session named '{session_name}'."
@@ -62,16 +81,11 @@ def remove_block(manager: AspenPlusManager, session_name: str, block_name: str) 
 
 def place_stream(
     manager: AspenPlusManager,
-    searcher: DefinitionSearcher,
     session_name: str,
     stream_name: str,
     stream_type: str = "MATERIAL",
 ) -> str:
     """Place a new stream on the flowsheet."""
-    result = searcher.resolve_stream_type(stream_type)
-    if result.matched:
-        stream_type = result.value
-
     app = manager.get_app(session_name)
     if app is None:
         return f"No active session named '{session_name}'."
@@ -98,7 +112,6 @@ def remove_stream(manager: AspenPlusManager, session_name: str, stream_name: str
 
 def connect_stream(
     manager: AspenPlusManager,
-    searcher: DefinitionSearcher,
     session_name: str,
     block_name: str,
     stream_name: str,
@@ -107,11 +120,9 @@ def connect_stream(
 ) -> str:
     """Connect a stream to a block port.(port name: F(IN), LD(OUT), B(OUT)...)"""
     if block_type:
-        result = searcher.resolve_port(block_type, port_name)
-        if result.matched:
-            port_name = result.value
-        else:
-            return f"Failed to connect stream '{stream_name}' to {block_name}:{port_name}: {result.message}"
+        resolved = _resolve_port(block_type, port_name)
+        if resolved:
+            port_name = resolved
 
     app = manager.get_app(session_name)
     if app is None:
@@ -123,5 +134,3 @@ def connect_stream(
     except Exception as exc:
         logger.error("Failed to connect stream '%s' to %s:%s: %s", stream_name, block_name, port_name, exc, exc_info=True)
         return f"Failed to connect stream '{stream_name}' to {block_name}:{port_name}: {exc}"
-
-

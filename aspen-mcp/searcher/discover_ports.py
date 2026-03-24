@@ -1,8 +1,7 @@
 """Auto-discover block ports via COM API.
 
 Places a temporary block of each known type, reads its Ports children,
-then removes it. Results are saved to block_ports.json for use by
-DefinitionSearcher.
+then removes it. Results are saved to block_ports.json.
 """
 
 from __future__ import annotations
@@ -12,8 +11,6 @@ import logging
 import time
 from pathlib import Path
 from typing import TYPE_CHECKING
-
-from .sgxml_loader import load_all_sgxml
 
 if TYPE_CHECKING:
     from aspen_manager import AspenPlusManager
@@ -28,32 +25,41 @@ TEMP_BLOCK_NAME = "ZTMPDISC"
 def discover_ports(
     manager: "AspenPlusManager",
     session_name: str,
-    sgxml_dir: str | None = None,
+    block_types: list[str] | None = None,
 ) -> tuple[dict[str, list[str]], list[str]]:
-    """Discover ports for all SGXML block types using a live Aspen session.
+    """Discover ports for block types using a live Aspen session.
 
     For each block type:
       1. Place a temporary block
       2. Read children of \\Data\\Blocks\\{name}\\Ports
       3. Remove the temporary block
 
+    Args:
+        block_types: List of block type names to discover. If None, uses
+                     the block types already in block_ports.json.
+
     Returns (results_dict, errors_list).
-    results_dict maps block_type (original casing) -> [port_name, ...].
+    results_dict maps block_type -> [port_name, ...].
     Also saves results to block_ports.json.
     """
     app = manager.get_app(session_name)
     if app is None:
         raise RuntimeError(f"No active session named '{session_name}'.")
 
-    # Get all block types from SGXML
-    sgxml_blocks = load_all_sgxml(sgxml_dir)
-    if not sgxml_blocks:
-        from .sgxml_loader import DEFAULT_SGXML_DIR
-        used_dir = sgxml_dir or DEFAULT_SGXML_DIR
+    # Determine which block types to discover
+    if block_types is None:
+        if PORTS_JSON.is_file():
+            try:
+                existing = json.loads(PORTS_JSON.read_text(encoding="utf-8"))
+                block_types = list(existing.keys())
+            except (json.JSONDecodeError, OSError):
+                block_types = []
+        else:
+            block_types = []
+
+    if not block_types:
         raise RuntimeError(
-            f"No block types found in SGXML. "
-            f"Checked directory: {used_dir} "
-            f"(exists={Path(used_dir).is_dir()})"
+            "No block types to discover. Provide block_types or ensure block_ports.json exists."
         )
 
     blocks_node = app.Tree.FindNode("\\Data\\Blocks")
@@ -63,8 +69,7 @@ def discover_ports(
     results: dict[str, list[str]] = {}
     errors: list[str] = []
 
-    for key, parsed in sgxml_blocks.items():
-        block_type = parsed["block_type"]
+    for block_type in block_types:
         logger.info("Discovering ports for %s ...", block_type)
 
         try:
@@ -95,7 +100,7 @@ def discover_ports(
             except Exception:
                 pass
 
-    # Merge with existing JSON (preserve manually added entries like MHeatX)
+    # Merge with existing JSON (preserve manually added entries)
     existing: dict[str, list[str]] = {}
     if PORTS_JSON.is_file():
         try:

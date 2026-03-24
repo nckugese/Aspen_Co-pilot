@@ -13,7 +13,7 @@ from mcp.server.fastmcp import FastMCP, Context
 
 # ---------------------------------------------------------------------------
 # Logging setup — writes to aspen_mcp.log next to server.py
-# Only logs from our own modules (aspen_manager, tools, searcher) go to file.
+# Only logs from our own modules (aspen_manager, tools) go to file.
 # MCP framework noise is suppressed.
 # ---------------------------------------------------------------------------
 _LOG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "aspen_mcp.log")
@@ -27,14 +27,8 @@ for _logger_name in ("aspen_manager", "tools"):
     _logger.setLevel(logging.DEBUG)
     _logger.addHandler(_file_handler)
 
-# searcher only logs WARNING+ (startup DEBUG is too noisy)
-_searcher_logger = logging.getLogger("searcher")
-_searcher_logger.setLevel(logging.WARNING)
-_searcher_logger.addHandler(_file_handler)
-
 from aspen_manager import AspenPlusManager
-from searcher import DefinitionSearcher
-from tools import main_tools, flowsheet_tools, value_tools, create_tools
+from tools import main_tools, flowsheet_tools, value_tools
 from tools.properties_tools import (
     get_property_method as _get_prop, set_property_method as _set_prop,
     add_component as _add_comp, remove_component as _rm_comp,
@@ -47,7 +41,6 @@ from tools.reaction_tools import (
     remove_reaction as _rm_rxn,
 )
 from tools.optimization_tools import run_optimization as _run_optimization
-from searcher.tool_searcher import search_properties as _search_props
 from searcher.discover_ports import discover_ports as _discover_ports
 
 # ------------------------------------------------------------------
@@ -56,9 +49,6 @@ from searcher.discover_ports import discover_ports as _discover_ports
 
 mcp = FastMCP(name="aspen-plus")
 manager = AspenPlusManager()
-
-SGXML_DIR = os.environ.get("ASPEN_SGXML_DIR", None)
-searcher = DefinitionSearcher(sgxml_dir=SGXML_DIR)
 
 # ==================================================================
 # Main tools (6)
@@ -125,80 +115,46 @@ def check_inputs(session_name: str) -> str:
 def get_value(
     session_name: str,
     aspen_path: str = None,
-    block_name: str = None,
-    block_type: str = None,
-    stream_name: str = None,
-    stream_type: str = None,
-    property_name: str = None,
-    extra_params: dict = None,
     paths: list[str] = None,
 ) -> str:
-    """Read a value from Aspen Plus. Three ways to specify the target:
+    """Read a value from Aspen Plus.
 
-    1. Direct path:  get_value(session, aspen_path='\\Data\\Blocks\\B1\\Input\\TEMP')
-    2. Block lookup:  get_value(session, block_name='B1', block_type='RadFrac', property_name='reflux_ratio')
-    3. Stream lookup: get_value(session, stream_name='S1', stream_type='MATERIAL', property_name='temperature')
-
-    Batch mode — pass paths to read multiple values in one call:
-      paths: ['\\Data\\Blocks\\B1\\Output\\B_TEMP', '\\Data\\Blocks\\B1\\Output\\QCALC']
-
-    Use search_properties to find available block_type/stream_type and property_name values.
+    Single:  get_value(session, aspen_path='\\Data\\Blocks\\B1\\Input\\TEMP')
+    Batch:   get_value(session, paths=['\\Data\\Blocks\\B1\\Output\\B_TEMP', '\\Data\\Blocks\\B1\\Output\\QCALC'])
     """
     if paths:
         results = []
         for p in paths:
             results.append(f"{p}: {manager.get_node_value(session_name, p)}")
         return "\n".join(results)
-    return value_tools.get_value(
-        manager, searcher, session_name,
-        aspen_path=aspen_path,
-        block_name=block_name, block_type=block_type,
-        stream_name=stream_name, stream_type=stream_type,
-        property_name=property_name, extra_params=extra_params,
-    )
+    return value_tools.get_value(manager, session_name, aspen_path)
 
 
 @mcp.tool()
 def set_value(
     session_name: str,
+    aspen_path: str = None,
     value: str = None,
     unit: str = None,
     basis: str = None,
-    aspen_path: str = None,
-    block_name: str = None,
-    block_type: str = None,
-    stream_name: str = None,
-    stream_type: str = None,
-    property_name: str = None,
-    extra_params: dict = None,
     items: list[dict] = None,
 ) -> str:
-    """Set a value in Aspen Plus. Three ways to specify the target:
+    """Set a value in Aspen Plus.
 
-    1. Direct path:  set_value(session, aspen_path='...', value='100', unit='C')
-    2. Block lookup:  set_value(session, block_name='B1', block_type='RadFrac', property_name='reflux_ratio', value='1.5')
-    3. Stream lookup: set_value(session, stream_name='S1', stream_type='MATERIAL', property_name='temperature', value='80', unit='C')
+    Single:  set_value(session, aspen_path='\\Data\\Blocks\\B1\\Input\\TEMP', value='100', unit='C')
+    Batch:   set_value(session, items=[{"path": "\\...\\TEMP", "value": "80", "unit": "C"}, ...])
 
     Smart dispatch — provide only what you want to change:
       - value only:  changes the numeric value (keeps current unit & basis)
       - unit only:   changes the unit (keeps current value & basis)
       - basis only:  changes the basis, e.g. 'MASS' or 'MOLE'
       - any combination: changes all specified fields at once
-
-    Batch mode — pass items to set multiple values in one call:
-      items: [{"path": "\\...\\TEMP", "value": "80", "unit": "C"}, {"path": "\\...\\PRES", "value": "1", "unit": "atm"}]
-
-    Uses SetValueUnitAndBasis under the hood for unit/basis changes.
     """
     if items:
         return value_tools.batch_set_values(manager, session_name, items)
     return value_tools.set_value(
-        manager, searcher, session_name,
+        manager, session_name, aspen_path,
         value=value, unit=unit, basis=basis,
-        aspen_path=aspen_path,
-        block_name=block_name, block_type=block_type,
-        stream_name=stream_name, stream_type=stream_type,
-        property_name=property_name, extra_params=extra_params,
     )
 
 
@@ -266,9 +222,9 @@ def place_block(
     if blocks:
         results = []
         for b in blocks:
-            results.append(flowsheet_tools.place_block(manager, searcher, session_name, b["name"], b["type"]))
+            results.append(flowsheet_tools.place_block(manager, session_name, b["name"], b["type"]))
         return "\n".join(results)
-    return flowsheet_tools.place_block(manager, searcher, session_name, block_name, block_type)
+    return flowsheet_tools.place_block(manager, session_name, block_name, block_type)
 
 
 @mcp.tool()
@@ -291,9 +247,9 @@ def place_stream(
     if streams:
         results = []
         for s in streams:
-            results.append(flowsheet_tools.place_stream(manager, searcher, session_name, s["name"], s.get("type", "MATERIAL")))
+            results.append(flowsheet_tools.place_stream(manager, session_name, s["name"], s.get("type", "MATERIAL")))
         return "\n".join(results)
-    return flowsheet_tools.place_stream(manager, searcher, session_name, stream_name, stream_type)
+    return flowsheet_tools.place_stream(manager, session_name, stream_name, stream_type)
 
 
 @mcp.tool()
@@ -320,11 +276,11 @@ def connect_stream(
         results = []
         for c in connections:
             results.append(flowsheet_tools.connect_stream(
-                manager, searcher, session_name,
+                manager, session_name,
                 c["block"], c["stream"], c["port"], c.get("block_type"),
             ))
         return "\n".join(results)
-    return flowsheet_tools.connect_stream(manager, searcher, session_name, block_name, stream_name, port_name, block_type)
+    return flowsheet_tools.connect_stream(manager, session_name, block_name, stream_name, port_name, block_type)
 
 
 # ==================================================================
@@ -565,36 +521,23 @@ def remove_row(session_name: str, aspen_path: str, index: int, dimension: int = 
 
 
 # ==================================================================
-# Search tool (1)
-# ==================================================================
-
-@mcp.tool()
-def search_properties(query: str) -> str:
-    """Search available block/stream properties by keyword.
-
-    Returns matching property names, types, and descriptions.
-    Example: search_properties("radfrac reflux") or search_properties("temperature").
-
-    Use search_properties to find available block_type and property_name values.
-    """
-    return _search_props(searcher, query)
-
-
-# ==================================================================
 # Discovery tool (1)
 # ==================================================================
 
 @mcp.tool()
-def discover_ports(session_name: str) -> str:
-    """Auto-discover block ports for all known block types via COM API.
+def discover_ports(session_name: str, block_types: list[str] = None) -> str:
+    """Auto-discover block ports via COM API.
 
     Places a temporary block of each type, reads its ports, removes it,
     and saves results to block_ports.json. Requires an active Aspen session
     (preferably a blank simulation).
+
+    Args:
+        block_types: Optional list of block type names to discover.
+                     If omitted, re-discovers all types in block_ports.json.
     """
     try:
-        results, errors = _discover_ports(manager, session_name, SGXML_DIR)
-        searcher.reload()
+        results, errors = _discover_ports(manager, session_name, block_types)
         summary_lines = [f"Discovered ports for {len(results)} block types:"]
         for bt, ports in sorted(results.items()):
             summary_lines.append(f"  {bt}: {', '.join(ports) if ports else '(none)'}")
@@ -605,34 +548,6 @@ def discover_ports(session_name: str) -> str:
         return "\n".join(summary_lines)
     except Exception as exc:
         return f"Port discovery failed: {exc}"
-
-
-# ==================================================================
-# Create tool (1)
-# ==================================================================
-
-@mcp.tool()
-def create_tool(
-    name: str,
-    category: str,
-    description: str = "",
-    block_type: str = None,
-    stream_type: str = None,
-    properties: list[dict] = None,
-) -> str:
-    """Create a new tool definition by writing a YAML file to the definitions/ directory.
-
-    Args:
-        name: Unique tool name.
-        category: Category path (e.g. "blocks/mixer").
-        description: Human-readable description.
-        block_type: Aspen block type (for block tools).
-        stream_type: Aspen stream type (for stream tools).
-        properties: List of property dicts with keys: name, aspen_path, type, description.
-    """
-    return create_tools.create_tool(
-        searcher, name, category, description, block_type, stream_type, properties
-    )
 
 
 # ==================================================================
