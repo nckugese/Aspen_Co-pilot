@@ -40,6 +40,14 @@ Use `list_elements` to see all components:
 list_elements(session, '\Data\Components\Specifications\Input\TYPE')
 ```
 
+### Block-Level Override
+
+Each block can override the global property method via `OPSETNAME`:
+```
+\Data\Blocks\{name}\Input\OPSETNAME
+```
+When changing the global method, **always check and update every block's OPSETNAME**. Mismatched property methods between blocks produce "INCONSISTENT PROPERTIES DETECTED" warnings and can cause wrong results or convergence failures.
+
 ## Gotchas
 
 - Set property method BEFORE adding blocks — it affects all calculations.
