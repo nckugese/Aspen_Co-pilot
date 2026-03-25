@@ -52,8 +52,7 @@ Each element = one iteration. Values should trend toward zero.
 
 When a simulation fails, follow this order:
 
-1. **Read PER_ERROR first** — For every block with errors, check `\Data\Blocks\{name}\Output\PER_ERROR`. It contains the specific error cause. Do not guess.
-2. **Fix upstream before downstream** — Upstream block errors cascade downstream. Always fix the most upstream issue first.
+1. **Fix upstream before downstream** — Upstream block errors cascade downstream. Always fix the most upstream issue first.
 
 ## Tips
 

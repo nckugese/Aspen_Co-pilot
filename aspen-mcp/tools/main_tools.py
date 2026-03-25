@@ -268,6 +268,45 @@ def _check_loop_convergence(app) -> str:
         return ""
 
 
+def get_flowsheet_topology(manager, session_name: str) -> str:
+    """Show all stream connections: source block → stream → destination block."""
+    app = manager.get_app(session_name)
+    if app is None:
+        return f"No active session named '{session_name}'."
+    try:
+        streams_node = app.Tree.FindNode(r"\Data\Streams")
+        if streams_node is None:
+            return "No streams found."
+        els = streams_node.Elements
+        if els.Count == 0:
+            return "No streams found."
+
+        lines = []
+        for i in range(els.Count):
+            stream_name = els.Item(i).Name
+            src_node = app.Tree.FindNode(
+                rf"\Data\Streams\{stream_name}\Output\SOURCE"
+            )
+            dst_node = app.Tree.FindNode(
+                rf"\Data\Streams\{stream_name}\Output\DESTINATION"
+            )
+            src = ""
+            dst = ""
+            if src_node is not None and src_node.Value:
+                src = str(src_node.Value)
+            if dst_node is not None and dst_node.Value:
+                dst = str(dst_node.Value)
+
+            src_label = src if src else "(FEED)"
+            dst_label = dst if dst else "(OUT)"
+            lines.append(f"  {src_label} --[{stream_name}]--> {dst_label}")
+
+        return f"Flowsheet topology ({els.Count} streams):\n" + "\n".join(lines)
+    except Exception as exc:
+        logger.error("Failed to get topology for '%s': %s", session_name, exc, exc_info=True)
+        return f"Failed to get flowsheet topology. Error: {exc}"
+
+
 def save_simulation(manager, session_name: str, file_path: str = None) -> str:
     """Save the current simulation to disk."""
     app = manager.get_app(session_name)

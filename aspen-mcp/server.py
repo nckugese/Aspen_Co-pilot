@@ -96,6 +96,16 @@ def run_simulation(session_name: str) -> str:
 
 
 @mcp.tool()
+def get_flowsheet_topology(session_name: str) -> str:
+    """Show all stream connections in the flowsheet.
+
+    Returns a list of: source_block --[stream_name]--> destination_block
+    for every stream. Feed streams show (FEED), product streams show (OUT).
+    """
+    return main_tools.get_flowsheet_topology(manager, session_name)
+
+
+@mcp.tool()
 def save_simulation(session_name: str, file_path: str = None) -> str:
     """Save the current simulation to disk"""
     return main_tools.save_simulation(manager, session_name, file_path)
