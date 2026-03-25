@@ -77,7 +77,9 @@ def reinit_simulation(manager, session_name: str) -> str:
     if app is None:
         return f"No active session named '{session_name}'."
     try:
+        app.SuppressDialogs = 1
         app.Reinit()
+        app.SuppressDialogs = 0
         return f"Simulation '{session_name}' reinitialized."
     except Exception as exc:
         logger.error("Failed to reinitialize '%s': %s", session_name, exc, exc_info=True)
