@@ -4,7 +4,8 @@ __pycache__/
 .env
 venv/
 .venv/
-.claude/
+.claude/settings.local.json
+.claude/worktrees/
 .mcp.json
 
 # Aspen Plus temp/working files
@@ -43,4 +44,11 @@ venv/
 *.for
 *.def
 $*$backup*
+_*oas.*
 commonshellsettings.xml
+
+# Aspen MCP internal docs (maintainer only)
+aspen-mcp/docs/community-setup.md
+
+# Aspen MCP logs
+aspen-mcp/aspen_mcp.log

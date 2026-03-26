@@ -41,6 +41,7 @@ from tools.reaction_tools import (
     remove_reaction as _rm_rxn,
 )
 from tools.optimization_tools import run_optimization as _run_optimization
+from tools.community_tools import share_error as _share_error
 from searcher.discover_ports import discover_ports as _discover_ports
 
 # ------------------------------------------------------------------
@@ -574,6 +575,13 @@ async def optimize(
     n_gen: int = 30,
     crossover_prob: float = 0.8,
     mutation_prob: float = 0.2,
+    eta_crossover: float = 20.0,
+    eta_mutation: float = 20.0,
+    seed: int = None,
+    sampling: str = "random",
+    stall_generations: int = 0,
+    max_retries: int = 1,
+    dry_run: bool = True,
     output_dir: str = None,
     ctx: Context = None,
 ) -> str:
@@ -582,8 +590,8 @@ async def optimize(
     Iteratively adjusts decision variables, runs the Aspen simulation,
     and evolves towards the Pareto-optimal front.
 
-    Progress is reported in real-time via MCP notifications after each
-    generation, showing feasible count and current best objective values.
+    IMPORTANT: By default dry_run=True, which only shows a preview of all
+    settings for the user to review. Set dry_run=False to actually run.
 
     Args:
         session_name: Active Aspen Plus session.
@@ -608,15 +616,69 @@ async def optimize(
         n_gen: Number of generations (default 30).
         crossover_prob: Crossover probability (default 0.8).
         mutation_prob: Mutation probability (default 0.2).
-        output_dir: Directory to save results JSON. Each run creates a
-            timestamped file (e.g. opt_session_20260318_143022.json).
-            If omitted, results are not saved to disk.
+        eta_crossover: Distribution index for SBX crossover (default 20.0).
+            Lower = more explorative, higher = more exploitative.
+        eta_mutation: Distribution index for polynomial mutation (default 20.0).
+            Lower = more explorative, higher = more exploitative.
+        seed: Random seed for reproducibility. None = non-deterministic.
+        sampling: Initial population sampling strategy.
+            'random' (default) or 'lhs' (Latin Hypercube — better coverage).
+        stall_generations: Stop early if best objectives don't improve for this
+            many consecutive generations. 0 = disabled (default).
+        max_retries: Max simulation attempts per evaluation (default 1 = no retry).
+            On failure, reinitializes and retries.
+        dry_run: If True (default), only show a preview of settings without
+            running. Set to False to actually start the optimization.
+        output_dir: Directory to save results. Each run creates a
+            timestamped folder. If omitted, results are not saved to disk.
     """
     return await _run_optimization(
         manager, session_name, variables, objectives,
         constraints=constraints, pop_size=pop_size, n_gen=n_gen,
         crossover_prob=crossover_prob, mutation_prob=mutation_prob,
-        output_dir=output_dir, ctx=ctx,
+        eta_crossover=eta_crossover, eta_mutation=eta_mutation,
+        seed=seed, sampling=sampling,
+        stall_generations=stall_generations, max_retries=max_retries,
+        dry_run=dry_run, output_dir=output_dir, ctx=ctx,
+    )
+
+
+# ==================================================================
+# Community tool (1)
+# ==================================================================
+
+@mcp.tool()
+def share_error(
+    error_keyword: str,
+    block_type: str,
+    property_method: str,
+    cause: str,
+    fix_direction: str,
+    fix_path: str,
+    tried_failed: str = "",
+) -> str:
+    """Share a resolved simulation error to the community Google Sheet.
+
+    Call this after successfully fixing a simulation error to help
+    other users who encounter the same issue.
+
+    Args:
+        error_keyword: Error message keyword (e.g. 'COLUMN NOT IN MASS BALANCE').
+        block_type: Block type involved (e.g. 'RadFrac', 'RCSTR').
+        property_method: Property method used (e.g. 'NRTL', 'PENG-ROB').
+        cause: Root cause description.
+        fix_direction: What was done to fix it.
+        fix_path: Aspen path that was changed (e.g. 'Data.Blocks.COL1.Input.BASIS_D').
+        tried_failed: What was tried but didn't work (optional).
+    """
+    return _share_error(
+        error_keyword=error_keyword,
+        block_type=block_type,
+        property_method=property_method,
+        cause=cause,
+        fix_direction=fix_direction,
+        fix_path=fix_path,
+        tried_failed=tried_failed,
     )
 
 

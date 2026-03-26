@@ -79,12 +79,30 @@ Optional list. Each constraint reads a value and checks bounds.
 
 ## GA Parameters
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `pop_size` | 50 | Population size per generation |
-| `n_gen` | 30 | Number of generations |
-| `crossover_prob` | 0.8 | Crossover probability (SBX, eta=20) |
-| `mutation_prob` | 0.2 | Mutation probability (polynomial, eta=20) |
+All parameters below are optional and shown in the dry-run preview. Adjust them there before launching.
+
+| Parameter | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `pop_size` | 50 | 10–200 | Population size per generation. Larger = broader search but more simulation runs per generation. |
+| `n_gen` | 30 | 5–100 | Number of generations (evolution iterations). More generations = better chance of finding the optimum but longer runtime. |
+| `crossover_prob` | 0.8 | 0.5–1.0 | Probability of SBX crossover — combining two parent solutions to produce offspring. Higher = more mixing. |
+| `mutation_prob` | 0.2 | 0.05–0.5 | Probability of polynomial mutation — random perturbation to avoid local optima. Higher = more exploration. |
+| `eta_crossover` | 20 | 5–30 | Distribution index for crossover. Lower = offspring spread far from parents (explorative). Higher = offspring stay close (exploitative). |
+| `eta_mutation` | 20 | 5–30 | Distribution index for mutation. Lower = large random jumps (explorative). Higher = small perturbations (precise). |
+| `sampling` | `"random"` | `"random"` / `"lhs"` | Initial population sampling. `lhs` (Latin Hypercube) gives more uniform coverage of the variable space. |
+| `seed` | None | any integer | Random seed for reproducibility. Set a fixed value to get identical results across runs. |
+| `stall_generations` | 0 (off) | 0–20 | Early stopping: halt if best objectives do not improve for this many consecutive generations. 0 = disabled. |
+| `max_retries` | 1 | 1–3 | Retry count per evaluation on simulation failure (reinitializes before retry). 1 = no retry. |
+| `output_dir` | None | directory path | Save results (report.md + evaluations.csv) to this directory. Each run creates a timestamped subfolder. |
+
+### Choosing pop_size and n_gen
+
+- **Quick test**: `pop_size=5, n_gen=2` — verify paths and convergence before committing to a long run.
+- **Light run**: `pop_size=20, n_gen=15` (~300 evaluations) — good for 2–3 variables.
+- **Standard run**: `pop_size=40, n_gen=25` (~1040 evaluations) — good for 4–6 variables.
+- **Thorough run**: `pop_size=80, n_gen=50` (~4080 evaluations) — many variables or need a well-defined Pareto front.
+
+Total evaluations ≈ `pop_size × (n_gen + 1)`.
 
 ## Penalty
 

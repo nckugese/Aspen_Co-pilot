@@ -3,7 +3,7 @@
 When you need to configure a specific Aspen Plus object, read the corresponding doc file below.
 
 ## General Rules
-
+- **Put aspen files in Example folder** 
 - **Check inputs before running** — Always call `check_inputs` before `run_simulation` to catch missing or incomplete inputs.
 - **Block/stream names** — Maximum **8 characters**, no leading underscores.
 - **Block type names** — Use SGXML captions (e.g. `Mixer`, `Flash2`, `RadFrac`) as COM block type identifiers.
@@ -52,3 +52,7 @@ See [optimization/index.md](optimization/index.md) for all optimization methods 
 ## Convergence
 
 See [convergence.md](convergence.md) for simulation convergence, tear methods, and diagnostics.
+
+## Error Troubleshooting & Community Sharing
+
+See [troubleshooting.md](troubleshooting.md) for the full workflow: diagnose errors, record fixes locally, and share to the community Google Sheet via the `share_error` tool.

@@ -4,15 +4,16 @@ This project provides an MCP server for controlling Aspen Plus via COM API.
 
 ## Documentation
 
-When you need to look up how to operate Aspen Plus blocks, streams, reactions, or other features, start from the documentation index:
+Do NOT guess Aspen paths or parameters. Before using any Aspen MCP tool (place_block, set_value, add_reaction, optimize, etc.), delegate to the `aspen-doc` agent to look up the relevant documentation. Do NOT read doc files directly in the main conversation — let the subagent read and summarize only what you need.
 
-- [aspen-mcp/docs/aspen.md](aspen-mcp/docs/aspen.md) — Main index for all Aspen Plus operations
+- [aspen-mcp/docs/aspen.md](aspen-mcp/docs/aspen.md) — Main index for all Aspen Plus operations (used by aspen-doc agent)
 
-Do NOT guess Aspen paths or parameters. Always read the relevant doc file first.
+## Error Troubleshooting
+
+When `run_simulation` returns errors or warnings, handle diagnosis and resolution directly following the workflow in [aspen-mcp/docs/troubleshooting.md](aspen-mcp/docs/troubleshooting.md).
 
 ## Key Files
 
 - `aspen-mcp/server.py` — MCP server entry point (all tool registrations)
 - `aspen-mcp/aspen_manager.py` — COM connection manager and low-level operations
 - `aspen-mcp/tools/` — Tool implementations
-- `aspen-mcp/definitions/` — Block/stream YAML definitions for property lookup
