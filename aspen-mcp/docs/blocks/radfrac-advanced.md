@@ -29,12 +29,23 @@ When the system contains immiscible liquids (e.g., water + organic), enable 3-ph
 
 > **Note:** `COMP_LIST` is a list node. Use `insert_row` to create a slot, then `set_value` on `#0` to assign the component. To read back: `list_elements` on `COMP_LIST`. Multiple key components can be added with additional `insert_row` calls.
 
+> **Important:** 3-phase mode (`NO_PHASE=3`) requires `ALGORITHM=STANDARD`. The default `SUM-RATES` (Petroleum/Wide-boiling) is **not compatible** with VLL phases and will produce the error: *"Convergence = Petroleum/Wide-boiling is not allowed when Valid Phases = Vapor-Liquid-Liquid"*. Change algorithm before running:
+> ```
+> set_value(session, aspen_path='\Data\Blocks\COL1\Input\ALGORITHM', value='STANDARD')
+> ```
+> Valid ALGORITHM values: `STANDARD`, `SUM-RATES`, `NEWTON`
+
+> **Warning:** `reinit_simulation` clears TRAY2 and COMP_LIST table data. After reinit, you must re-insert rows and re-set values for 3-phase configuration.
+
 ## 3-Phase Convergence Tips
 
 | Path | Type | Description |
 |------|------|-------------|
 | `\Data\Blocks\{name}\Input\MAXOL` | int | Max outer loop iterations (default 25, increase to 100+ for 3-phase) |
-| `\Data\Blocks\{name}\Input\DAMPING` | string | Damping: `NONE`, `MODERATE`, `SEVERE` |
+| `\Data\Blocks\{name}\Input\DAMPING` | string | Damping: `NONE`, `MILD`, `MEDIUM`, `SEVERE` |
+| `\Data\Blocks\{name}\Input\LL_METH` | string | Liquid-liquid split method: `GIBBS` (default) |
+| `\Data\Blocks\{name}\Input\L2_GAMMA` | string | Activity coefficient model for 2nd liquid phase: `MARGULES` (only valid value) |
+| `\Data\Blocks\{name}\Input\L2_CUTOFF` | float | Cutoff for 2nd liquid phase detection (default 0.5) |
 
 - 3-phase columns are harder to converge than 2-phase. If "COLUMN NOT CONVERGED", try increasing `MAXOL` and setting `DAMPING=SEVERE`.
 - "LIQUID-LIQUID PHASE SPLIT CALC. FAILED TO CONVERGE" often means the stage range (`TRAY2`) is too narrow — expand to cover the full column (1 to NSTAGE).
@@ -98,6 +109,35 @@ Example: `\Data\Blocks\COL1\Subobjects\Column Internals\INT-1\Input\CA_STAGE1\IN
 - List sections: `list_elements(session, '\Data\Blocks\{name}\Subobjects\Column Internals\{int}\Subobjects\Sections')`
 - Remove section: `remove_element(session, '...\Sections', 'CS-1')`
 - Remove internal: `remove_element(session, '...\Column Internals', 'INT-1')`
+
+## Side Draws (Side Product)
+
+RadFrac supports liquid or vapor side draws from intermediate stages via the SP(OUT) port.
+
+### Setup Steps
+
+1. Place a new stream: `place_stream(session, 'SIDEDRAW', 'MATERIAL')`
+2. Connect to SP(OUT): `connect_stream(session, stream_name='SIDEDRAW', block_name='COL1', port_name='SP(OUT)', block_type='RadFrac')`
+3. Set the draw stage, flow rate, and phase:
+
+| Path | Type | Description |
+|------|------|-------------|
+| `\Data\Blocks\{name}\Input\PROD_STAGE\{stream}` | int | Stage number for the side draw |
+| `\Data\Blocks\{name}\Input\PROD_FLOW\{stream}` | float | Side draw flow rate (kmol/hr by default) |
+| `\Data\Blocks\{name}\Input\PROD_PHASE\{stream}` | string | Phase: `L` (liquid) or `V` (vapor) |
+
+Example:
+```
+set_value(session, aspen_path='\Data\Blocks\COL1\Input\PROD_STAGE\SIDEDRAW', value='25')
+set_value(session, aspen_path='\Data\Blocks\COL1\Input\PROD_FLOW\SIDEDRAW', value='50', unit='kmol/hr')
+set_value(session, aspen_path='\Data\Blocks\COL1\Input\PROD_PHASE\SIDEDRAW', value='L')
+```
+
+### Gotchas
+
+- Mass balance constraint: Distillate + Side draw + Bottoms = Feed. If D + SD > Feed, you get `***SEVERE ERROR: COLUMN NOT IN MASS BALANCE`.
+- To move an existing bottoms/distillate stream to a side draw: `remove_stream` → `place_stream` → `connect_stream` to SP(OUT). See [streams.md](../streams.md#reconnecting-streams) for the reconnection workflow.
+- Each SP(OUT) connection adds one side draw. Multiple side draws are supported.
 
 ## Block-Specific Advanced Inputs
 

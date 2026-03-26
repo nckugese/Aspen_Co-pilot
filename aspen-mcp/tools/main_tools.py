@@ -124,6 +124,10 @@ def run_simulation(manager, session_name: str) -> str:
             convergence_report = _check_loop_convergence(app)
             if convergence_report:
                 msg += "\n\n" + convergence_report
+            msg += (
+                "\n\n⚠ STOP — Use the aspen-doc agent to look up the relevant block documentation, "
+                "and follow the troubleshooting workflow in docs/troubleshooting.md"
+            )
         return msg
     except Exception as exc:
         logger.error("Failed to run simulation '%s': %s", session_name, exc, exc_info=True)
@@ -153,7 +157,7 @@ def _check_run_status(app) -> str:
         return "Run status message:\n  " + "\n  ".join(lines)
     except Exception:
         logger.debug("_check_run_status failed", exc_info=True)
-        return ""
+        return "Warning: could not read run status"
 
 
 def _check_block_errors(app) -> str:
@@ -212,7 +216,7 @@ def _check_block_errors(app) -> str:
         return "Block errors:\n" + "\n".join(errors)
     except Exception:
         logger.debug("_check_block_errors failed", exc_info=True)
-        return ""
+        return "Warning: could not read block error status"
 
 
 def _check_loop_convergence(app) -> str:
@@ -267,7 +271,7 @@ def _check_loop_convergence(app) -> str:
         return "\n".join(lines) if len(lines) > 1 else ""
     except Exception:
         logger.debug("_check_loop_convergence failed", exc_info=True)
-        return ""
+        return "Warning: could not read loop convergence status"
 
 
 def get_flowsheet_topology(manager, session_name: str) -> str:
@@ -276,6 +280,31 @@ def get_flowsheet_topology(manager, session_name: str) -> str:
     if app is None:
         return f"No active session named '{session_name}'."
     try:
+        # Build connection map from Block Connections (always available, even
+        # before a simulation run — unlike the Output/SOURCE|DESTINATION nodes
+        # on streams which are only populated after a successful run).
+        stream_src: dict[str, str] = {}  # stream_name → source block
+        stream_dst: dict[str, str] = {}  # stream_name → destination block
+
+        blocks_node = app.Tree.FindNode(r"\Data\Blocks")
+        if blocks_node is not None:
+            for i in range(blocks_node.Elements.Count):
+                block = blocks_node.Elements.Item(i)
+                block_name = block.Name
+                conn_node = app.Tree.FindNode(
+                    rf"\Data\Blocks\{block_name}\Connections"
+                )
+                if conn_node is None:
+                    continue
+                for j in range(conn_node.Elements.Count):
+                    elem = conn_node.Elements.Item(j)
+                    sname = elem.Name          # stream name
+                    port_info = str(elem.Value) if elem.Value else ""
+                    if "(IN)" in port_info.upper():
+                        stream_dst[sname] = block_name
+                    elif "(OUT)" in port_info.upper():
+                        stream_src[sname] = block_name
+
         streams_node = app.Tree.FindNode(r"\Data\Streams")
         if streams_node is None:
             return "No streams found."
@@ -286,21 +315,8 @@ def get_flowsheet_topology(manager, session_name: str) -> str:
         lines = []
         for i in range(els.Count):
             stream_name = els.Item(i).Name
-            src_node = app.Tree.FindNode(
-                rf"\Data\Streams\{stream_name}\Output\SOURCE"
-            )
-            dst_node = app.Tree.FindNode(
-                rf"\Data\Streams\{stream_name}\Output\DESTINATION"
-            )
-            src = ""
-            dst = ""
-            if src_node is not None and src_node.Value:
-                src = str(src_node.Value)
-            if dst_node is not None and dst_node.Value:
-                dst = str(dst_node.Value)
-
-            src_label = src if src else "(FEED)"
-            dst_label = dst if dst else "(OUT)"
+            src_label = stream_src.get(stream_name, "(FEED)")
+            dst_label = stream_dst.get(stream_name, "(OUT)")
             lines.append(f"  {src_label} --[{stream_name}]--> {dst_label}")
 
         return f"Flowsheet topology ({els.Count} streams):\n" + "\n".join(lines)
@@ -381,7 +397,12 @@ def check_inputs(manager, session_name: str) -> str:
 
     if not incomplete:
         return "All required inputs are complete. Ready to run."
-    return f"Incomplete inputs ({len(incomplete)}):\n" + "\n".join(incomplete)
+    result = f"Incomplete inputs ({len(incomplete)}):\n" + "\n".join(incomplete)
+    result += (
+        "\n\n⚠ Use the aspen-doc agent to look up required fields "
+        "for the incomplete block(s)."
+    )
+    return result
 
 
 def get_node_value(manager, session_name: str, aspen_path: str) -> str:

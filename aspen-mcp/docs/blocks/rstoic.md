@@ -25,6 +25,8 @@ Reactor with known stoichiometry and fractional conversion. No kinetics needed â
 | `\Data\Blocks\{name}\Input\KEY_SSID\{rxn}` | string | Substream ID for key reactant (usually `MIXED`) |
 | `\Data\Blocks\{name}\Input\COEF\{rxn}\{comp}\{substream}` | float | Reactant stoichiometric coefficient (negative) |
 | `\Data\Blocks\{name}\Input\COEF1\{rxn}\{comp}\{substream}` | float | Product stoichiometric coefficient (positive) |
+| `\Data\Blocks\{name}\Input\OPT_EXT_CONV\{rxn}` | string | Reaction mode: `CONVERSION` (default) or `EXTENT` |
+| `\Data\Blocks\{name}\Input\EXTENT\{rxn}` | float | Molar extent of reaction (kmol/hr). Only used when `OPT_EXT_CONV=EXTENT` |
 
 ## Output
 
@@ -114,3 +116,9 @@ set_value(session, aspen_path='\Data\Blocks\R1\Input\COEF1\1\WATER\MIXED', value
 set_label(session, '\Data\Blocks\R1\Input\COEF\1', index=2, label='OXYGEN', dimension=0)
 set_value(session, aspen_path='\Data\Blocks\R1\Input\COEF\1\OXYGEN\MIXED', value='-0.5')
 ```
+- **CONVERSION vs EXTENT mode:** By default, reactions use `CONVERSION` (fractional conversion of key component). When the reactor is inside a **recycle loop**, CONVERSION applies to the total feed (fresh + recycle), causing the reaction rate to scale with recycle flow â€” often consuming more reactant than available. Switch to `EXTENT` mode to fix the molar reaction rate:
+  ```
+  set_value(session, aspen_path='\Data\Blocks\R1\Input\OPT_EXT_CONV\1', value='EXTENT')
+  set_value(session, aspen_path='\Data\Blocks\R1\Input\EXTENT\1', value='145')  # kmol/hr
+  ```
+  Use EXTENT when: (1) reactor is in a recycle loop, (2) you want a fixed production rate regardless of feed composition, (3) the limiting reagent may change between iterations.

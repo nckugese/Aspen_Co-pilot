@@ -129,7 +129,29 @@ def connect_stream(
         return f"No active session named '{session_name}'."
     try:
         blocks = app.Tree.FindNode("\\Data\\Blocks")
-        blocks.Elements(block_name).Elements("Ports").Elements(port_name).Elements.Add(stream_name)
+        block_node = blocks.Elements(block_name)
+        ports_node = block_node.Elements("Ports")
+        port_node = ports_node.Elements(port_name)
+        if port_node is None:
+            return (f"Port '{port_name}' not found on block '{block_name}'."
+                    " Use discover_ports to see valid port names.")
+        port_els = port_node.Elements
+        if port_els is None:
+            return (f"Port '{port_name}' not found on block '{block_name}'."
+                    " Use discover_ports to see valid port names.")
+
+        # For output ports (non-feed), auto-disconnect existing stream if occupied
+        is_output = "(OUT)" in port_name.upper()
+        if is_output and port_els.Count > 0:
+            old_stream = port_els.Item(0).Name
+            try:
+                port_els.Remove(old_stream)
+                logger.info("Auto-disconnected stream '%s' from %s:%s", old_stream, block_name, port_name)
+            except Exception as rm_exc:
+                logger.warning("Could not auto-disconnect '%s' from %s:%s: %s",
+                               old_stream, block_name, port_name, rm_exc)
+
+        port_els.Add(stream_name)
         return f"Stream '{stream_name}' connected to {block_name} port {port_name}."
     except Exception as exc:
         logger.error("Failed to connect stream '%s' to %s:%s: %s", stream_name, block_name, port_name, exc, exc_info=True)

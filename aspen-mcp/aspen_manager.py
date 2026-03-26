@@ -304,6 +304,21 @@ class AspenPlusManager:
             return " ".join(parts)
         except Exception as exc:
             logger.error("Error writing '%s': %s", aspen_path, exc, exc_info=True)
+            err_str = str(exc)
+            # Provide actionable hints for common COM errors
+            if "Invalid symbol value" in err_str:
+                hint = (f" Hint: '{value}' is not a valid option for this field."
+                        " Use list_node_children to see the current value,"
+                        " or check documentation for valid values.")
+                return f"Error writing '{aspen_path}': {exc}{hint}"
+            if "AE_UNDERSPEC" in err_str:
+                hint = (" Hint: this path may be a table node (e.g. FEED_STAGE\\{stream})"
+                        " or the node is not user-enterable in the current state."
+                        " Use list_node_children to inspect the node structure.")
+                return f"Error writing '{aspen_path}': {exc}{hint}"
+            if "Sum of fractions" in err_str:
+                hint = " Hint: set all component fractions in a single batch call, or set the last component so the total ≤ 1."
+                return f"Error writing '{aspen_path}': {exc}{hint}"
             return f"Error writing '{aspen_path}': {exc}"
 
     def get_node_unit_info(self, session_name: str, aspen_path: str) -> str:
@@ -456,6 +471,14 @@ class AspenPlusManager:
                 lines.append(f"  [{i}] {name} = {val}")
             return "\n".join(lines)
         except Exception as exc:
+            err_str = str(exc)
+            # Leaf nodes don't have Elements — return value instead of erroring
+            if "list node on a leaf node" in err_str:
+                try:
+                    val = node.Value
+                    return f"'{aspen_path}' is a leaf node (not a list/table). Current value: {val}"
+                except Exception:
+                    pass
             logger.error("Error listing elements at '%s': %s", aspen_path, exc, exc_info=True)
             return f"Error listing elements at '{aspen_path}': {exc}"
 

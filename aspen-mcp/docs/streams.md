@@ -65,6 +65,25 @@ set_value(session, aspen_path='\Data\Streams\FEED\Input\FLOW\MIXED\ETHANOL', val
 set_value(session, aspen_path='\Data\Streams\FEED\Input\FLOW\MIXED\WATER', value='0.3')
 ```
 
+## Reconnecting Streams
+
+To move a stream from one block port to another (e.g., change a bottoms product to a side draw), you must remove and re-place the stream. Direct `connect_stream` to an occupied port will fail with *"Outlet port has more than one stream connected"*.
+
+### Workflow
+
+1. Remove the stream: `remove_stream(session, 'PRODUCT')`
+2. Re-place it: `place_stream(session, 'PRODUCT', 'MATERIAL')`
+3. Connect to the new port: `connect_stream(session, stream_name='PRODUCT', block_name='COL1', port_name='SP(OUT)', block_type='RadFrac')`
+
+> **Note:** `remove_stream` deletes the stream and all its input/output data. If the stream had user-specified inputs (T, P, composition), they must be re-entered after re-placing.
+
+### Common Errors
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| "Outlet port has more than one stream connected" | Target port already has a stream | Remove existing stream from that port first |
+| "Stream has more than one source" | Stream is still connected to its old source block | `remove_stream` → `place_stream` → `connect_stream` |
+
 ## Gotchas
 
 - Input paths have `\MIXED` suffix (substream name).
