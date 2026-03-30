@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import logging
 import os
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -113,6 +114,9 @@ def run_simulation(manager, session_name: str) -> str:
                 logger.debug("COMPSTATUS check failed for '%s', proceeding to run", session_name)
 
         app.Run2()
+        # Wait for simulation to finish (Run2 may return asynchronously)
+        while app.Engine.IsRunning:
+            time.sleep(0.5)
 
         # Auto-check run status; only dig deeper if there are issues
         run_status = _check_run_status(app)

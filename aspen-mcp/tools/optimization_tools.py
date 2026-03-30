@@ -209,6 +209,9 @@ def _evaluate(individual, *, manager, session_name, variables, objectives,
     for attempt in range(max_retries):
         try:
             app.Run2()
+            # Wait for simulation to finish (Run2 may return asynchronously)
+            while app.Engine.IsRunning:
+                time.sleep(0.5)
             run_ok = True
             break
         except Exception as exc:
