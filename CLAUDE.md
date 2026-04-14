@@ -10,7 +10,7 @@ Do NOT guess Aspen paths or parameters. Before using any Aspen MCP tool (place_b
 
 ## Error Troubleshooting
 
-When `run_simulation` returns errors or warnings, handle diagnosis and resolution directly following the workflow in [aspen-mcp/docs/troubleshooting.md](aspen-mcp/docs/troubleshooting.md).
+When `run_simulation` returns errors or warnings, invoke the `aspen-error-troubleshooting` skill for the diagnosis → fix → record → share workflow.
 
 ## Key Files
 

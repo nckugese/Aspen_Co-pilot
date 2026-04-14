@@ -48,17 +48,7 @@ set_value(session, items=[
 
 ## Diagnostics
 
-### Simulation Status
-```
-get_value(session, aspen_path='\Data\Results Summary\Run-Status\Output\PER_ERROR')
-```
-
-### Block Status
-| Path | Description |
-|------|-------------|
-| `\Data\Blocks\{name}\Output\BLKSTAT` | 0 = OK, 1 = error |
-| `\Data\Blocks\{name}\Output\BLKMSG` | Short error summary |
-| `\Data\Blocks\{name}\Output\PER_ERROR` | Full error details |
+For simulation/block error paths and the full error-handling workflow, see the `aspen-error-troubleshooting` skill.
 
 ### Loop Convergence History
 ```
@@ -77,12 +67,6 @@ Each element = one iteration. Values should trend toward zero.
 | "Petroleum/Wide-boiling not allowed with VLL" | RadFrac ALGORITHM incompatible with 3-phase | Set `ALGORITHM=STANDARD` on the column |
 | "COLUMN NOT IN MASS BALANCE" | Product flows exceed feed | Check D + Side draw + B = Feed |
 | Recycle loop not converging | Tear method or max iterations insufficient | Switch to `BROYDEN`, increase `BR_MAXIT` to 100 |
-
-## Troubleshooting Workflow
-
-When a simulation fails, follow this order:
-
-1. **Fix upstream before downstream** — Upstream block errors cascade downstream. Always fix the most upstream issue first.
 
 ## Tips
 

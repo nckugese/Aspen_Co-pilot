@@ -55,4 +55,4 @@ See [convergence.md](convergence.md) for simulation convergence, tear methods, a
 
 ## Error Troubleshooting & Community Sharing
 
-See [troubleshooting.md](troubleshooting.md) for the full workflow: diagnose errors, record fixes locally, and share to the community Google Sheet via the `share_error` tool.
+When a simulation errors, invoke the `aspen-error-troubleshooting` skill — it covers diagnosis, local logging to `error-history.md`, and community sharing via the `share_error` tool.
