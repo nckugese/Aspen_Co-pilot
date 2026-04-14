@@ -1,0 +1,392 @@
+{
+  "CCD": [
+    "S(IN)",
+    "L(IN)",
+    "SF(IN)",
+    "HS(IN)",
+    "S(OUT)",
+    "L(OUT)",
+    "SP(OUT)",
+    "HS(OUT)",
+    "PS(OUT)"
+  ],
+  "CfFilter": [
+    "F(IN)",
+    "P(OUT)",
+    "R(OUT)"
+  ],
+  "Cfuge": [
+    "F(IN)",
+    "L(OUT)",
+    "P(OUT)",
+    "O(OUT)"
+  ],
+  "Classifier": [
+    "F(IN)",
+    "G(IN)",
+    "P(OUT)",
+    "S(OUT)"
+  ],
+  "Compr": [
+    "F(IN)",
+    "WS(IN)",
+    "P(OUT)",
+    "WD(OUT)",
+    "WS(OUT)"
+  ],
+  "ConSep": [
+    "F(IN)",
+    "HS(IN)",
+    "WS(IN)",
+    "D(OUT)",
+    "B(OUT)",
+    "HS(OUT)",
+    "WS(OUT)"
+  ],
+  "Crusher": [
+    "F(IN)",
+    "WS(IN)",
+    "P(OUT)",
+    "WS(OUT)"
+  ],
+  "Crystallizer": [
+    "F(IN)",
+    "HS(IN)",
+    "P(OUT)",
+    "V(OUT)",
+    "HS(OUT)"
+  ],
+  "Cyclone": [
+    "F(IN)",
+    "G(OUT)",
+    "S(OUT)"
+  ],
+  "Decanter": [
+    "F(IN)",
+    "HS(IN)",
+    "L1(OUT)",
+    "L2(OUT)",
+    "HS(OUT)"
+  ],
+  "Distl": [
+    "F(IN)",
+    "CHS(IN)",
+    "RHS(IN)",
+    "D(OUT)",
+    "B(OUT)",
+    "CWD(OUT)",
+    "CHS(OUT)",
+    "RHS(OUT)"
+  ],
+  "Dryer": [
+    "FEED(IN)",
+    "GAS(IN)",
+    "Q-IN(IN)",
+    "G2(IN)",
+    "PRODUCT(OUT)",
+    "EXHAUST(OUT)",
+    "Q-OUT(OUT)"
+  ],
+  "DSTWU": [
+    "F(IN)",
+    "CHS(IN)",
+    "RHS(IN)",
+    "D(OUT)",
+    "B(OUT)",
+    "CWD(OUT)",
+    "CHS(OUT)",
+    "RHS(OUT)"
+  ],
+  "Electrolyzer": [
+    "FA(IN)",
+    "FS(IN)",
+    "FC(IN)",
+    "HS(IN)",
+    "PS(IN)",
+    "PA(OUT)",
+    "PC(OUT)",
+    "HS(OUT)"
+  ],
+  "ESP": [
+    "F(IN)",
+    "G(OUT)",
+    "S(OUT)"
+  ],
+  "Extract": [
+    "TF(IN)",
+    "BF(IN)",
+    "SF(IN)",
+    "HS(IN)",
+    "TP(OUT)",
+    "BP(OUT)",
+    "SP(OUT)",
+    "HS(OUT)",
+    "PS(OUT)"
+  ],
+  "Fabfl": [
+    "F(IN)",
+    "G(OUT)",
+    "S(OUT)"
+  ],
+  "Filter": [
+    "F(IN)",
+    "F2(IN)",
+    "L(OUT)",
+    "S(OUT)",
+    "P2(OUT)"
+  ],
+  "Flash2": [
+    "F(IN)",
+    "HS(IN)",
+    "V(OUT)",
+    "L(OUT)",
+    "WD(OUT)",
+    "HS(OUT)"
+  ],
+  "Flash3": [
+    "F(IN)",
+    "HS(IN)",
+    "V(OUT)",
+    "L1(OUT)",
+    "L2(OUT)",
+    "HS(OUT)"
+  ],
+  "Fluidbed": [
+    "F(IN)",
+    "G(IN)",
+    "H(IN)",
+    "G2(IN)",
+    "P(OUT)",
+    "G(OUT)",
+    "H(OUT)"
+  ],
+  "FSplit": [
+    "F(IN)",
+    "HS(IN)",
+    "WS(IN)",
+    "PS(IN)",
+    "P(OUT)",
+    "HS(OUT)",
+    "WS(OUT)",
+    "PS(OUT)"
+  ],
+  "Granulator": [
+    "F(IN)",
+    "L(IN)",
+    "G(IN)",
+    "P(OUT)",
+    "G(OUT)"
+  ],
+  "Heater": [
+    "F(IN)",
+    "HS(IN)",
+    "P(OUT)",
+    "WD(OUT)",
+    "HS(OUT)"
+  ],
+  "HeatX": [
+    "H(IN)",
+    "C(IN)",
+    "H(OUT)",
+    "C(OUT)"
+  ],
+  "HXFlux": [
+    "HS(IN)",
+    "HS(OUT)"
+  ],
+  "HyCyc": [
+    "F(IN)",
+    "L(OUT)",
+    "S(OUT)"
+  ],
+  "Makeup": [
+    "F(IN)",
+    "FM(IN)",
+    "O(OUT)",
+    "P(OUT)"
+  ],
+  "Mcompr": [
+    "S1F(IN)",
+    "IF(IN)",
+    "WS(IN)",
+    "HS(IN)",
+    "FLS(OUT)",
+    "LK(OUT)",
+    "WD(OUT)",
+    "WS(OUT)",
+    "HS(OUT)"
+  ],
+  "Mixer": [
+    "F(IN)",
+    "HS(IN)",
+    "WS(IN)",
+    "PS(IN)",
+    "P(OUT)",
+    "HS(OUT)",
+    "WS(OUT)",
+    "PS(OUT)",
+    "WD(OUT)"
+  ],
+  "Multifrac": [
+    "F(IN)",
+    "HS(IN)",
+    "VD(OUT)",
+    "LD(OUT)",
+    "B(OUT)",
+    "SP(OUT)",
+    "CWD(OUT)",
+    "HS(OUT)",
+    "PS(OUT)"
+  ],
+  "PetroFrac": [
+    "MF(IN)",
+    "SF(IN)",
+    "MHS(IN)",
+    "SHS(IN)",
+    "PHS(IN)",
+    "VD(OUT)",
+    "LD(OUT)",
+    "B(OUT)",
+    "SP(OUT)",
+    "WD(OUT)",
+    "SB(OUT)",
+    "PS(OUT)",
+    "CHS(OUT)",
+    "RHS(OUT)",
+    "MHS(OUT)",
+    "SHS(OUT)",
+    "PHS(OUT)"
+  ],
+  "Pipe": [
+    "F(IN)",
+    "P(OUT)"
+  ],
+  "Pipeline": [
+    "F(IN)",
+    "P(OUT)"
+  ],
+  "Pump": [
+    "F(IN)",
+    "WS(IN)",
+    "P(OUT)",
+    "WD(OUT)",
+    "WS(OUT)"
+  ],
+  "RadFrac": [
+    "F(IN)",
+    "HS(IN)",
+    "VD(OUT)",
+    "LD(OUT)",
+    "B(OUT)",
+    "SP(OUT)",
+    "WD(OUT)",
+    "CHS(OUT)",
+    "RHS(OUT)",
+    "PS(OUT)",
+    "HS(OUT)"
+  ],
+  "RBatch": [
+    "BC(IN)",
+    "CF(IN)",
+    "RP(OUT)",
+    "VP(OUT)",
+    "HS(OUT)"
+  ],
+  "RCSTR": [
+    "F(IN)",
+    "HS(IN)",
+    "VI(IN)",
+    "P(OUT)",
+    "HS(OUT)"
+  ],
+  "REquil": [
+    "F(IN)",
+    "HS(IN)",
+    "V(OUT)",
+    "L(OUT)",
+    "HS(OUT)"
+  ],
+  "RGibbs": [
+    "F(IN)",
+    "HS(IN)",
+    "P(OUT)",
+    "HS(OUT)"
+  ],
+  "RPlug": [
+    "F(IN)",
+    "C(IN)",
+    "P(OUT)",
+    "C(OUT)",
+    "HS(OUT)"
+  ],
+  "RStoic": [
+    "F(IN)",
+    "HS(IN)",
+    "P(OUT)",
+    "HS(OUT)"
+  ],
+  "RYield": [
+    "F(IN)",
+    "HS(IN)",
+    "P(OUT)",
+    "HS(OUT)"
+  ],
+  "SCFrac": [
+    "F(IN)",
+    "SF(IN)",
+    "D(OUT)",
+    "B(OUT)",
+    "SP(OUT)"
+  ],
+  "Screen": [
+    "F(IN)",
+    "O(OUT)",
+    "U(OUT)",
+    "MS(OUT)"
+  ],
+  "Sep": [
+    "F(IN)",
+    "P(OUT)",
+    "HS(OUT)"
+  ],
+  "Sep2": [
+    "F(IN)",
+    "O(OUT)",
+    "B(OUT)",
+    "HS(OUT)"
+  ],
+  "SSplit": [
+    "F(IN)",
+    "P(OUT)"
+  ],
+  "Swash": [
+    "S(IN)",
+    "L(IN)",
+    "HS(IN)",
+    "S(OUT)",
+    "L(OUT)",
+    "HS(OUT)"
+  ],
+  "Valve": [
+    "F(IN)",
+    "P(OUT)"
+  ],
+  "Vscrub": [
+    "F(IN)",
+    "L(IN)",
+    "G(OUT)",
+    "S(OUT)"
+  ],
+  "MHeatX": [
+    "HF(IN)",
+    "CF(IN)",
+    "HLF(IN)",
+    "CLF(IN)",
+    "HP(OUT)",
+    "CP(OUT)",
+    "HLP(OUT)",
+    "CLP(OUT)",
+    "HWD(OUT)",
+    "CWD(OUT)"
+  ]
+}
