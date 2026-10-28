@@ -1,0 +1,38 @@
+{
+  "description": "Codex's copy of hooks/hooks.json: the same scripts (session-start.ps1, workbench-asks.ps1), told they run under Codex (-Client codex), which differs in what reaches the model. Besides ~/.aspen-mcp/aspen-workbench.cmd, the SessionStart hook under Codex also writes ~/.aspen-mcp/codex-aspen.cmd and installs the aspen-doc subagent as ~/.codex/agents/aspen-doc.toml; like the Claude Code copy, it starts the once-a-day `git ls-remote --tags` update check. Stop and UserPromptSubmit hand the AI the workbench's waiting Ask AI requests (Codex takes no pushed message) and note when the AI's turn starts and ends, for the workbench chat's still-working line.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${PLUGIN_ROOT}/scripts/session-start.ps1\" -Client codex",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${PLUGIN_ROOT}/scripts/workbench-asks.ps1\" -Event stop -Client codex",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${PLUGIN_ROOT}/scripts/workbench-asks.ps1\" -Event prompt -Client codex",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}

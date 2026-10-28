@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!-- 'unsafe-eval': pywebview builds window.pywebview.api with new Function and runs evaluate_js through eval -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self'; font-src 'self' data:">
+  <title>Aspen Workbench</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+  <script src="blockly/blockly.min.js"></script>
+  <!-- Blockly's bundle carries English; keep a copy before the Chinese strings replace it. -->
+  <script>window.WB_BLOCKLY_EN = Object.assign({}, Blockly.Msg);</script>
+  <script src="blockly/msg/zh-hant.js"></script>
+  <script>window.WB_BLOCKLY_ZH = Object.assign({}, Blockly.Msg);</script>
+  <script src="util.js"></script>
+  <script src="i18n.js"></script>
+  <script src="labels.js"></script>
+  <script src="blocks.js"></script>
+  <script src="fs-icons.js"></script>
+  <script src="flowsheet.js"></script>
+  <script src="results.js"></script>
+  <script src="changes.js"></script>
+  <script src="walk.js"></script>
+  <script src="help.js"></script>
+  <script src="principle.js"></script>
+  <script src="missing.js"></script>
+  <script src="diag.js"></script>
+  <script src="app-core.js"></script>
+  <script src="app-glass.js"></script>
+  <script src="app-widgets.js"></script>
+  <script src="app-state.js"></script>
+  <script src="app-layout.js"></script>
+  <script src="app-pane.js"></script>
+  <script src="app-program.js"></script>
+  <script src="app-run.js"></script>
+  <script src="app-status.js"></script>
+  <script src="app-proposal.js"></script>
+  <script src="app-step.js"></script>
+  <script src="app-turn.js"></script>
+  <script src="app-model.js"></script>
+  <script src="app-fsl.js"></script>
+  <script src="app-flowsheet.js"></script>
+  <script src="app-preview.js"></script>
+  <script src="app-group.js"></script>
+  <script src="app-effects.js"></script>
+  <script src="app-flows.js"></script>
+  <script src="app-comp.js"></script>
+  <script src="app-pins.js"></script>
+  <script src="app-heat.js"></script>
+  <script src="app-chat.js"></script>
+  <script src="games/frame.js"></script>
+  <script src="games/tray.js"></script>
+  <script src="games/baffle.js"></script>
+  <script src="games/setpoint.js"></script>
+  <script src="games/split.js"></script>
+  <script src="app-wait.js"></script>
+  <script src="app-inspector.js"></script>
+  <script src="app-undo.js"></script>
+  <script src="app-replay.js"></script>
+  <script src="app-tabs.js"></script>
+  <script src="app-subtabs.js"></script>
+  <script src="app-conn.js"></script>
+  <script src="app-brake.js"></script>
+  <script src="app-follow.js"></script>
+  <script src="learn.js"></script>
+  <script src="app-tour.js"></script>
+  <script src="app-main.js"></script>
+</head>
+<body>
+  <!-- Icons: 16 px line drawings in the text colour. A button with data-icon="x" gets
+       <svg class="ic"><use href="#i-x"/></svg> in front of its text (app-core.js, dressIcons). -->
+  <svg class="sprite" width="0" height="0" aria-hidden="true">
+    <symbol id="i-play" viewBox="0 0 16 16"><path d="M5 3.4v9.2l7.2-4.6z" fill="currentColor" stroke-width="1.4"/></symbol>
+    <symbol id="i-stop" viewBox="0 0 16 16"><rect x="4" y="4" width="8" height="8" rx="1.6" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-check" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.75"/><path d="M5.6 8.2l1.7 1.7 3.2-3.5"/></symbol>
+    <symbol id="i-save" viewBox="0 0 16 16"><path d="M3 3h7.5L13 5.5V13H3z"/><path d="M5.5 3v2.75h4V3M5.5 13V9.75h5V13"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 16 16"><path d="M2.5 4.25c0-.55.45-1 1-1h2.8l1.5 1.5h4.7c.55 0 1 .45 1 1v6c0 .55-.45 1-1 1h-9c-.55 0-1-.45-1-1z"/></symbol>
+    <symbol id="i-undo" viewBox="0 0 16 16"><path d="M6 3.5L3 6.5l3 3"/><path d="M3.5 6.5H10a3 3 0 0 1 0 6H7"/></symbol>
+    <symbol id="i-redo" viewBox="0 0 16 16"><path d="M10 3.5l3 3-3 3"/><path d="M12.5 6.5H6a3 3 0 0 0 0 6h3"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 16 16"><path d="M8 3.5v9M3.5 8h9"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 16 16"><path d="M3.5 8h9"/></symbol>
+    <symbol id="i-close" viewBox="0 0 16 16"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7"/></symbol>
+    <symbol id="i-fit" viewBox="0 0 16 16"><path d="M3 6V3h3M10 3h3v3M13 10v3h-3M6 13H3v-3"/></symbol>
+    <symbol id="i-maximize" viewBox="0 0 16 16"><path d="M9.5 2.75h3.75V6.5M13 3L9 7M6.5 13.25H2.75V9.5M3 13l4-4"/></symbol>
+    <symbol id="i-restore" viewBox="0 0 16 16"><path d="M9 3v4h4M9 7l4.25-4.25M7 13V9H3M7 9l-4.25 4.25"/></symbol>
+    <symbol id="i-chevron-down" viewBox="0 0 16 16"><path d="M4 6l4 4 4-4"/></symbol>
+    <symbol id="i-chevron-up" viewBox="0 0 16 16"><path d="M4 10l4-4 4 4"/></symbol>
+    <symbol id="i-chevron-right" viewBox="0 0 16 16"><path d="M6 4l4 4-4 4"/></symbol>
+    <symbol id="i-chevron-left" viewBox="0 0 16 16"><path d="M10 4L6 8l4 4"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 16 16"><path d="M13 8a5 5 0 1 1-1.46-3.54"/><path d="M13 2.75V5.5h-2.75"/></symbol>
+    <symbol id="i-sparkle" viewBox="0 0 16 16"><path d="M7 2.25l1.2 3.55 3.55 1.2-3.55 1.2L7 11.75 5.8 8.2 2.25 7l3.55-1.2z" fill="currentColor" stroke-width="1.2"/><path d="M12.25 10.25v3.5M10.5 12h3.5"/></symbol>
+    <symbol id="i-chat" viewBox="0 0 16 16"><path d="M2.75 4.25c0-.83.67-1.5 1.5-1.5h7.5c.83 0 1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5H7.5l-3 2.5v-2.5h-.25c-.83 0-1.5-.67-1.5-1.5z"/></symbol>
+    <symbol id="i-download" viewBox="0 0 16 16"><path d="M8 2.75v7M5 7l3 3 3-3M3 13h10"/></symbol>
+    <symbol id="i-more" viewBox="0 0 16 16"><circle cx="3.5" cy="8" r="1.15" fill="currentColor" stroke="none"/><circle cx="8" cy="8" r="1.15" fill="currentColor" stroke="none"/><circle cx="12.5" cy="8" r="1.15" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-block" viewBox="0 0 16 16"><rect x="2.5" y="4" width="11" height="8" rx="2"/></symbol>
+    <symbol id="i-vessel" viewBox="0 0 16 16"><path d="M5 4.6a3 2 0 0 1 6 0v6.8a3 2 0 0 1-6 0z"/><path d="M5 9.5h6M3 6.5h2M11 12h2"/></symbol>
+    <symbol id="i-stream" viewBox="0 0 16 16"><path d="M2 8h10.5M9.5 5l3 3-3 3"/></symbol>
+    <symbol id="i-send" viewBox="0 0 16 16"><path d="M8 12.75V3.5M4 7.25l4-4 4 4"/></symbol>
+    <symbol id="i-reply" viewBox="0 0 16 16"><path d="M6.5 4L3 7.5 6.5 11"/><path d="M3.5 7.5H9a4 4 0 0 1 4 4v1"/></symbol>
+    <symbol id="i-pen" viewBox="0 0 16 16"><path d="M10.5 2.75l2.75 2.75-7.5 7.5H3v-2.75z"/><path d="M9 4.25L11.75 7"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 16 16"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 5.5v-2a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 16 16"><path d="M8 2.5l6 10.5H2z"/><path d="M8 6.5v3M8 11.3v.01"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.25"/><path d="M8 1.75v2M8 12.25v2M1.75 8h2M12.25 8h2M3.6 3.6L5 5M11 11l1.4 1.4M3.6 12.4L5 11M11 5l1.4-1.4"/></symbol>
+    <symbol id="i-logo" viewBox="0 0 16 16"><path d="M8 1.75L14.25 8 8 14.25 1.75 8z" fill="currentColor" stroke-width="1.2"/></symbol>
+    <symbol id="i-values" viewBox="0 0 16 16"><path d="M2.75 4.5h10.5M2.75 8h7M2.75 11.5h9"/></symbol>
+    <symbol id="i-filter" viewBox="0 0 16 16"><path d="M2.25 3.25h11.5L9.25 8.6v3.9l-2.5 1.25V8.6z"/></symbol>
+    <symbol id="i-search" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.25"/><path d="M10.25 10.25l3 3"/></symbol>
+    <symbol id="i-tab" viewBox="0 0 16 16"><path d="M2.5 12.75V5.25c0-.55.45-1 1-1h3.25l1.25 2h4.5c.55 0 1 .45 1 1v5.5"/><path d="M1.75 12.75h12.5"/></symbol>
+    <symbol id="i-aspen" viewBox="0 0 16 16"><rect x="1.75" y="2.5" width="5" height="4" rx="1"/><rect x="9.25" y="9.5" width="5" height="4" rx="1"/><path d="M6.75 4.5H8.5v7h.75"/></symbol>
+    <symbol id="i-layout" viewBox="0 0 16 16"><rect x="2.25" y="2.75" width="11.5" height="10.5" rx="1.75"/><path d="M7 2.75v10.5M7 8h6.75"/></symbol>
+    <symbol id="i-keyboard" viewBox="0 0 16 16"><rect x="1.75" y="4" width="12.5" height="8" rx="1.5"/><path d="M4.5 6.6h.01M7 6.6h.01M9.5 6.6h.01M12 6.6h.01M5.5 9.6h5"/></symbol>
+    <symbol id="i-help" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.75"/><path d="M6.4 6.5a1.65 1.65 0 1 1 2.4 1.5c-.5.25-.8.6-.8 1.15v.2M8 11.2v.01"/></symbol>
+    <symbol id="i-info" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.75"/><path d="M8 7.3v3.5M8 5.1v.01"/></symbol>
+    <!-- a proposal opened from History (app-subtabs.js) -->
+    <symbol id="i-clock" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.75"/><path d="M8 4.9V8l2.1 1.4"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 16 16"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5"/></symbol>
+    <!-- what an inspector row becomes in the program (its add menu) -->
+    <symbol id="i-add" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.75"/><path d="M8 5.4v5.2M5.4 8h5.2"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 16 16"><path d="M1.75 8S4 3.9 8 3.9 14.25 8 14.25 8 12 12.1 8 12.1 1.75 8 1.75 8z"/><circle cx="8" cy="8" r="1.9"/></symbol>
+    <!-- the AI's brakes (app-brake.js): its modes, a pause, the brakes off -->
+    <symbol id="i-shield" viewBox="0 0 16 16"><path d="M8 1.75l5.25 2v4c0 3.1-2.2 5.4-5.25 6.5C4.95 13.15 2.75 10.85 2.75 7.75v-4z"/><path d="M5.6 8.1l1.7 1.7 3.1-3.3"/></symbol>
+    <symbol id="i-shield-off" viewBox="0 0 16 16"><path d="M13.25 7.75c0 3.1-2.2 5.4-5.25 6.5C4.95 13.15 2.75 10.85 2.75 7.75v-4L8 1.75l5.25 2z" stroke-dasharray="2.2 1.9"/><path d="M4.25 4.25l7.5 7.5"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 16 16"><path d="M9.25 1.75L3.75 9h4l-1 5.25L12.25 7h-4z"/></symbol>
+    <symbol id="i-step" viewBox="0 0 16 16"><path d="M3.75 3.6v8.8l6.6-4.4z" fill="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M12.4 3.5v9" stroke-width="1.8"/></symbol>
+    <symbol id="i-skip" viewBox="0 0 16 16"><path d="M2.5 4.1v7.8L7.6 8zM8.4 4.1v7.8L13.5 8z" fill="currentColor" stroke-width="1.2" stroke-linejoin="round"/></symbol>
+    <symbol id="i-select" viewBox="0 0 16 16"><rect x="2.75" y="2.75" width="10.5" height="10.5" rx="2.25"/><path d="M5.4 8.1l1.8 1.8 3.4-3.7"/></symbol>
+    <symbol id="i-blocks" viewBox="0 0 16 16"><path d="M2.75 3.25h3.1l.8 1h2.7l.8-1h3.1v3.5H2.75z"/><path d="M2.75 9.25h3.1l.8 1h2.7l.8-1h3.1v3.5H2.75z"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 16 16"><path d="M5.75 3.75v8.5M10.25 3.75v8.5" stroke-width="2.1"/></symbol>
+    <symbol id="i-seek" viewBox="0 0 16 16"><path d="M2.5 8h8.25M8 5.25L10.75 8 8 10.75M13.5 3.25v9.5"/></symbol>
+    <symbol id="i-slider" viewBox="0 0 16 16"><path d="M2.5 5h11M2.5 11h11"/><circle cx="6" cy="5" r="1.7" fill="#fff"/><circle cx="10.5" cy="11" r="1.7" fill="#fff"/></symbol>
+    <symbol id="i-limit" viewBox="0 0 16 16"><path d="M4.5 3.5l7 3.25-7 3.25M3 12.75h10"/></symbol>
+    <!-- the block categories -->
+    <symbol id="i-fx" viewBox="0 0 16 16"><path d="M7.5 3.1c-1.4-.5-2.5.2-2.75 1.65L3.7 11.9c-.25 1.45-1.2 1.95-2.2 1.6"/><path d="M3 7h3.75M9 7.5l4 5M13 7.5l-4 5"/></symbol>
+    <symbol id="i-flow" viewBox="0 0 16 16"><rect x="1.75" y="5.25" width="4.5" height="5.5" rx="1.25"/><rect x="9.75" y="5.25" width="4.5" height="5.5" rx="1.25"/><path d="M6.25 8h3.5"/></symbol>
+    <symbol id="i-loop" viewBox="0 0 16 16"><path d="M12.6 6.4A4.75 4.75 0 0 0 3.9 5.4"/><path d="M3.5 2.75v3h3"/><path d="M3.4 9.6a4.75 4.75 0 0 0 8.7 1"/><path d="M12.5 13.25v-3h-3"/></symbol>
+    <symbol id="i-table" viewBox="0 0 16 16"><rect x="2.5" y="3" width="11" height="10" rx="1.5"/><path d="M2.5 6.5h11M6.5 6.5V13"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 16 16"><path d="M2.75 2.75v10.5h10.5"/><path d="M5.5 10.25L8 7.25l2 1.75 3-4"/></symbol>
+    <symbol id="i-braces" viewBox="0 0 16 16"><path d="M5.5 2.75c-1.25 0-1.75.6-1.75 1.75v1.5c0 .9-.5 1.5-1.25 2 .75.5 1.25 1.1 1.25 2v1.5c0 1.15.5 1.75 1.75 1.75"/><path d="M10.5 2.75c1.25 0 1.75.6 1.75 1.75v1.5c0 .9.5 1.5 1.25 2-.75.5-1.25 1.1-1.25 2v1.5c0 1.15-.5 1.75-1.75 1.75"/></symbol>
+    <symbol id="i-target" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5"/><circle cx="8" cy="8" r="2.25"/></symbol>
+    <symbol id="i-flame" viewBox="0 0 16 16"><path d="M8 14c-2.6 0-4.25-1.8-4.25-4.1 0-3 3.25-4.2 3.25-7.4 2.4 1.4 5.25 3.9 5.25 7.3 0 2.4-1.7 4.2-4.25 4.2z"/><path d="M8 14c-1 0-1.75-.8-1.75-1.8 0-1.3 1.75-2 1.75-3.2 1 .7 1.75 1.7 1.75 3.1 0 1-.75 1.9-1.75 1.9z"/></symbol>
+    <!-- the selection hub's mark on a step (style.css .wb-ref): a straight bar left of it, its height
+         less 6 at each end (so it follows neither the notch nor the corners), a gap of the canvas
+         between; drawn by the step's own path, so a redraw keeps it -->
+    <filter id="f-ref" x="-30%" y="-10%" width="140%" height="120%" color-interpolation-filters="sRGB">
+      <feMorphology in="SourceAlpha" operator="erode" radius="0 6"/>
+      <feOffset dx="-9" result="h"/>
+      <feFlood class="gap" x="-5" width="5"/>
+      <feComposite in2="h" operator="in" result="gap"/>
+      <feFlood class="bar" x="-9" width="4"/>
+      <feComposite in2="h" operator="in" result="bar"/>
+      <feMerge><feMergeNode in="gap"/><feMergeNode in="bar"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </svg>
+
+  <!-- the header runs the model: the tabs; then the model the tab shown works on (#modelstat:
+       its file and what Aspen last said of it; a click opens the model panel), Save model and
+       Run simulation (each only where the server offers it); the AI's brakes (its mode, Pause
+       AI; app-brake.js) and #ai-bar, what the AI is doing (hidden while it does nothing;
+       app-conn.js); the connection, the language and the ...
+       menu. The block program has its own run bar in the left column (.prog-bar). Buttons
+       with data-a go through act() in app-pane.js; the model group is drawn by app-model.js. -->
+  <header id="bar">
+    <!-- the logo opens Help: the beginner tour, the flowsheet legend, the keys (app-tour.js) -->
+    <button id="logo" class="logo icon flat" data-i18n-title="tip_logo" aria-haspopup="menu"><svg class="ic" aria-hidden="true"><use href="#i-logo"/></svg></button>
+    <nav id="tabs"></nav>
+    <button id="tab-add" class="icon flat" data-icon="plus" data-i18n-title="tab_add"></button>
+    <span class="grow"></span>
+    <!-- the AI's turn still running (app-conn.js renderThink): "AI is thinking…" (ai_think) and its seconds, the
+         same state and count as the chat's waiting line (app-wait.js) -->
+    <span id="ai-think" class="ai-think hidden" role="status"></span>
+    <span class="model-grp">
+      <button id="modelstat" class="modelstat none" data-a="model" aria-haspopup="menu">
+        <i class="dot"></i><span class="ms-name"><span class="ms-h"></span><span class="ms-t"></span></span><span class="ms-st"></span>
+        <svg class="ic chev" aria-hidden="true"><use href="#i-chevron-down"/></svg>
+      </button>
+      <button data-a="save_model" class="icon flat hidden" data-icon="save"></button>
+      <!-- Run simulation, and ▾ for the other way to run it (Reinitialize first) -->
+      <span class="simrun split hidden">
+        <button data-a="run_sim" class="primary" data-icon="play" data-i18n="run_sim"></button>
+        <button data-a="run_sim_menu" class="primary sim-more" data-icon="chevron-down" data-i18n-title="tip_run_sim_menu" aria-haspopup="menu"></button>
+      </span>
+    </span>
+    <!-- AI review (app-brake.js): the shield and its menu (the review mode, Pause AI),
+         Resume and what a pause holds, the pending badge; only where the server has it
+         (catalog.features brake). #ai-bar: what the AI is doing, ⏸ at its end. #conn: only when
+         not connected as normal (app-conn.js). The language is in the ⋯ menu. -->
+    <span id="ai-brake" class="ai-brake hidden" role="group"></span>
+    <span id="ai-bar" class="ai-bar hidden" aria-live="polite"></span>
+    <span id="conn" class="conn off"><i class="dot"></i><span class="ct"></span></span>
+    <!-- the page failed to take the server's last few updates (app-state.js renderStale): a quiet line, Reload -->
+    <span id="ui-stale" class="ui-stale hidden" role="status"><span class="us-t"></span><span class="us-sep" aria-hidden="true">·</span><button class="us-go flat"></button></span>
+    <button id="btn-more" class="icon flat" data-icon="more" data-i18n-title="tip_more"></button>
+  </header>
+  <main id="panes">
+    <!-- no tab yet: one card that says what to do -->
+    <div id="no-tabs" class="empty-card hidden">
+      <svg class="ic big" aria-hidden="true"><use href="#i-logo"/></svg>
+      <div class="et" data-i18n="empty_title"></div>
+      <div class="eb" data-i18n="empty_body"></div>
+      <q class="esay" data-i18n="say_open"></q>
+      <div class="ea">
+        <button id="empty-new" class="primary" data-icon="plus" data-i18n="empty_new"></button>
+        <button id="empty-copy" data-icon="copy" data-i18n="empty_copy"></button>
+      </div>
+    </div>
+  </main>
+  <!-- workspaces of the tabs not shown: rendered off screen, so a program can load any time -->
+  <div id="ws-store"></div>
+
+  <template id="pane-tpl">
+    <section class="pane">
+      <!-- the program takes the whole left column; the flowsheet sits top right, the dock
+           (AI chat, changes, run log, results) under it -->
+      <div class="pbody">
+        <div class="pleft">
+          <!-- the model's sub-tabs (app-subtabs.js): "My program" (prog_mine), its other programs, +, the AI's
+               proposals in progress and those opened from History; "History" n (sub_hist) at the right end.
+               Hidden while the model has only "My program" -->
+          <div class="subtabs hidden">
+            <div class="sub-track" role="tablist"></div>
+            <button class="sub-hist flat hidden" data-sub="hist" aria-haspopup="dialog" aria-expanded="false"><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg><span class="sh-t"></span><b class="sh-n"></b></button>
+          </div>
+          <!-- the block program's card: its run bar on top (what the program is doing, its
+               versions, Check program and Run program, Stop while it runs, its menu), the canvas
+               under it. Folded (.closed: app-layout.js), the card keeps its size out of sight
+               and the strip below takes the column's 40 px. -->
+          <div class="pl-card">
+          <div class="prog-bar">
+            <!-- fold the column to its strip (the strip's chevron, at the same place, opens it) -->
+            <button data-a="prog_fold" class="icon flat prog-fold" data-icon="chevron-left" data-i18n-title="tip_prog_fold"></button>
+            <button class="runstat prog-stat idle" data-a="status">
+              <i class="dot"></i><span class="st"><span class="st-long"></span><span class="st-short"></span></span>
+              <svg class="ic chev" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+              <i class="st-bar"><b></b></i>
+            </button>
+            <span class="grow"></span>
+            <button data-a="undo" class="icon flat" data-icon="undo" data-i18n-title="tip_undo"></button>
+            <button data-a="redo" class="icon flat" data-icon="redo" data-i18n-title="tip_redo"></button>
+            <button data-a="check" data-icon="check" data-i18n="check_prog" data-i18n-title="tip_check"></button>
+            <!-- Step through (feature stepping; app-step.js): the program pauses before each step -->
+            <button data-a="step" class="hidden" data-icon="step" data-i18n="btn_step"></button>
+            <!-- Run and Stop share one place: the one that applies shows -->
+            <span class="runstop">
+              <button data-a="run" data-icon="play" data-i18n="run_prog"></button>
+              <button data-a="stop" class="stop" data-icon="stop" data-i18n="stop" data-i18n-title="tip_stop" tabindex="-1"></button>
+            </span>
+            <!-- paused before a step (app-step.js): on to the end, or the next step (F10) -->
+            <span class="stepbtns hidden" role="group">
+              <button data-a="step_cont" data-icon="skip" data-i18n="go_on" data-i18n-title="tip_step_cont"></button>
+              <button data-a="step_next" class="primary" data-icon="step" data-i18n="btn_step_next" data-i18n-title="tip_step_next_k"></button>
+            </span>
+            <button data-a="prog_menu" class="icon flat" data-icon="more" data-i18n-title="tip_prog_menu" aria-haspopup="menu"></button>
+            <!-- a run by group while its card shows (app-group.js): the bar keeps its title, this thin
+                 line of the groups done, and ⋯ -- Stop and the rest are the card's -->
+            <i class="gc-line" aria-hidden="true"><b></b></i>
+          </div>
+          <div class="blockly">
+            <!-- over the canvas, top right: a version from the AI held while the user was editing
+                 (the canvas zooms with the wheel; Fit is in the run bar's ⋯, Ctrl+0) -->
+            <div class="blk-bar">
+              <span class="blk-held plate hidden"><svg class="ic hi" aria-hidden="true"><use href="#i-sparkle"/></svg><span class="ht"></span><button class="hload" data-a="held_load" data-i18n="held_load" data-i18n-title="tip_held"></button></span>
+            </div>
+            <!-- an empty program: where its first block goes, under the start block -->
+            <div class="blk-empty hidden"></div>
+            <!-- the run cursor, beside the step running now (app-run.js, renderCursor) -->
+            <div class="run-cur plate hidden" aria-hidden="true"><svg class="ic"><use href="#i-play"/></svg></div>
+            <!-- paused before a step (app-step.js): the next step beside it -- what it writes, where in
+                 Aspen, its problems; information only, the buttons are the run bar's -->
+            <div class="step-card plate hidden" role="status" aria-live="polite"></div>
+            <!-- a step's left edge under the pointer: where its breakpoint's red dot would go -->
+            <div class="brk-hint hidden" aria-hidden="true"></div>
+          </div>
+          </div>
+          <!-- the folded column: a click opens the block program; a dot while it runs; ✦ and the
+               count of the model's proposals in progress (a dot: one awaits review) -->
+          <button class="prog-strip" data-a="prog_open">
+            <svg class="ic" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+            <span class="ps-t" data-i18n="prog_title"></span>
+            <i class="dot"></i>
+            <span class="ps-prop hidden"><svg class="ic" aria-hidden="true"><use href="#i-sparkle"/></svg><b class="ps-n"></b><i class="ps-rv hidden"></i></span>
+          </button>
+        </div>
+        <div class="vsplit" data-i18n-title="tip_vsplit"></div>
+        <div class="pright">
+          <div class="fs-wrap">
+            <div class="fs-area">
+              <svg class="fs"></svg>
+              <!-- a static fade at each edge where more of the drawing lies, and a hint there
+                   that counts it (a click pans that way) -->
+              <div class="fs-fade x"></div><div class="fs-fade y"></div>
+              <button class="fs-hint plate hidden" data-side="l"><svg class="ic" aria-hidden="true"><use href="#i-chevron-left"/></svg><span class="eh"></span></button>
+              <button class="fs-hint plate hidden" data-side="r"><span class="eh"></span><svg class="ic" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
+              <button class="fs-hint plate hidden" data-side="t"><svg class="ic" aria-hidden="true"><use href="#i-chevron-up"/></svg><span class="eh"></span></button>
+              <button class="fs-hint plate hidden" data-side="b"><svg class="ic" aria-hidden="true"><use href="#i-chevron-down"/></svg><span class="eh"></span></button>
+              <!-- floats over the drawing: glass, so the flowsheet shows through. The chip says
+                   what is picked ("REACTOR › RCSTR"; a click finds it), only while something is.
+                   The capsule holds the layers, the zoom (a click fits the drawing) and ⋯, the
+                   flowsheet's menu: the arrangement, how blocks are drawn, the legend, export.
+                   Which model this is: the header. -->
+              <div class="right-bar">
+                <!-- a proposal's preview on the drawing (app-preview.js): a state, so it is not taken
+                     for the model; pressed, the preview hides and the pill keeps its eye -->
+                <button class="fs-pvp plate hidden" data-a="pv_pill" aria-pressed="true"><svg class="ic" aria-hidden="true"><use href="#i-eye"/></svg><span class="pvp-w"></span></button>
+                <span class="fs-chip lens hidden">
+                  <span class="fc-sel"><button class="fc-tg" data-a="find_sel" data-i18n-title="tip_find_sel"><b></b><svg class="ic sep" aria-hidden="true"><use href="#i-chevron-right"/></svg><small></small></button></span>
+                </span>
+                <span class="grow"></span>
+                <span class="fs-tools lens">
+                  <!-- the layers: the heat plans always there, off (saying how) until a pinch run -->
+                  <span class="fg">
+                    <button data-a="values" class="tgl" data-icon="values" data-i18n="btn_values" data-i18n-title="tip_values"></button>
+                    <button data-a="heat" class="tgl" data-icon="flame" data-i18n="btn_heat" data-i18n-title="tip_heat"></button>
+                  </span>
+                  <i class="fsep"></i>
+                  <!-- the zoom, as a percentage; a click shows the whole drawing (the wheel zooms) -->
+                  <button data-a="fit" class="zpct" data-i18n-title="tip_zpct">100%</button>
+                  <i class="fsep"></i>
+                  <!-- the flowsheet's menu (app-flowsheet.js fsMenuItems); busy while Aspen's drawing is read -->
+                  <button data-a="fs_menu" class="fs-more" data-icon="more" data-i18n-title="tip_fs_menu" aria-haspopup="menu"></button>
+                </span>
+              </div>
+              <!-- a heat plan, while the heat plans layer shows: a glass card at the bottom left
+                   (app-heat.js, renderPlan) with the plan switch, its exchangers and the utilities still
+                   needed (a row's pointer dims the other arcs, a click finds its arc), the heat
+                   recovered and Ask AI to apply. A short card folds it to its head row, which
+                   opens upward. -->
+              <div class="fs-plan lens hidden">
+                <div class="pl-head">
+                  <svg class="ic pl-ic" aria-hidden="true"><use href="#i-flame"/></svg><b class="pl-title" data-i18n="btn_heat"></b>
+                  <span class="pl-seg"></span><span class="pl-sum"></span>
+                  <button class="pl-fold" data-p="fold"><svg class="ic" aria-hidden="true"><use href="#i-chevron-up"/></svg></button>
+                </div>
+                <div class="pl-body">
+                  <div class="pl-list"></div>
+                  <div class="pl-foot"><span class="pl-rec"></span><span class="grow"></span><button class="pl-ask" data-p="ask" data-icon="sparkle" data-i18n="btn_heat_apply" data-i18n-title="tip_heat_apply"></button></div>
+                </div>
+              </div>
+              <!-- a proposal approved by group (app-group.js): the group it is about to
+                   apply, or applying -- where it is ("1 / 2"), the group's title and why (or what was
+                   set by hand that the group sets again), Stop, Apply the rest and Apply group (F10).
+                   Bottom centre of the free area, a lens; Enter presses it only while it has the focus -->
+              <div class="gc-card lens hidden" role="group" tabindex="0">
+                <span class="gc-pos"></span>
+                <span class="gc-body"><span class="gc-l1"><b class="gc-t"></b><span class="gc-prn"></span></span><span class="gc-l2"></span></span>
+                <button class="flat gc-stop" data-gc="stop"></button>
+                <button class="gc-rest" data-gc="rest"></button>
+                <button class="primary gc-go" data-gc="go"></button>
+              </div>
+              <!-- the Values layer on, zoomed out past reading: a static line says to zoom in
+                   (app-flowsheet.js, renderEdges) -->
+              <div class="fs-far plate hidden" data-i18n="vals_far" aria-live="polite"></div>
+              <!-- a stream's values where the pointer rests on it (app-flowsheet.js, peek) -->
+              <div class="fs-peek plate hidden" aria-hidden="true"></div>
+            </div>
+            <!-- the inspector: built once, its parts filled in (app-inspector.js, renderInspector), so the
+                 filter keeps its caret and an IME composition while the rows change -->
+            <aside class="insp lens hidden">
+              <!-- its left edge: dragged, it widens (app-inspector.js); a double-click, back to the default -->
+              <div class="insp-grip" data-i18n-title="tip_insp_grip" aria-hidden="true"></div>
+              <!-- the head: what it is, then its actions as icons -- Ask AI about it, add it to the
+                   program, check for edits made in Aspen's own window (feature external) -- and × -->
+              <div class="ih">
+                <span class="it"><svg class="ic ik" aria-hidden="true"><use href="#i-block"/></svg><b class="iname"></b><small class="itype"></small><span class="lvl hidden"></span></span>
+                <span class="ia">
+                  <button class="ask flat icon" data-act="note" data-icon="sparkle" data-i18n-title="tip_insp_note"></button>
+                  <button class="flat icon" data-act="block" data-icon="plus" data-i18n-title="tip_insp_block"></button>
+                  <button class="ideep flat icon hidden" data-act="ext_deep" data-icon="aspen"></button>
+                </span>
+                <button class="x" data-act="close" data-i18n-title="close_esc"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
+              </div>
+              <!-- what Aspen still needs of it, or that it needs nothing (app-inspector.js, renderStatus) -->
+              <div class="istat hidden"></div>
+              <!-- one status line under the head (app-inspector.js, oneBand): the most important of the
+                   lines below shows, the others in its tooltip. What a check for edits in Aspen came to
+                   (renderDeep) -->
+              <div class="iext hidden"></div>
+              <!-- a program paused before a step: an edit here is yours, and kept -->
+              <div class="ipaused hidden"></div>
+              <div class="ierrs"></div>
+              <div class="ifrow">
+                <label class="ifbox"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg><input class="ifilter" data-i18n-ph="insp_filter" spellcheck="false"></label>
+                <label class="iall" data-i18n-title="tip_insp_all"><input type="checkbox" data-act="all"><span data-i18n="insp_all"></span></label>
+              </div>
+              <div class="itip hidden"></div>
+              <div class="irows"></div>
+            </aside>
+          </div>
+          <div class="hsplit" data-i18n-title="tip_hsplit"><i></i><i></i><i></i></div>
+          <div class="panel dock">
+            <div class="dnav">
+              <nav>
+                <i class="seg glide gx"></i>
+                <button data-tab="msgs" class="on" data-i18n-title="tip_tab_msgs"><span data-i18n="tab_msgs"></span><i class="ai-dot"></i></button>
+                <!-- who changed what in the model (changes.js), where the server offers it -->
+                <button data-tab="changes" class="hidden" data-i18n-title="tip_tab_changes"><span data-i18n="tab_changes"></span><span class="ch-count hidden"></span></button>
+                <button data-tab="log" data-i18n-title="tip_tab_log"><span data-i18n="run_log"></span><i class="run-dot"></i></button>
+                <button data-tab="results" data-i18n-title="tip_tab_results"><span data-i18n="tab_results"></span><i class="res-dot"></i></button>
+              </nav>
+              <!-- collapsed dock only: a way back to the conversation -->
+              <button class="dock-ask" data-dock="ask" data-icon="sparkle" data-i18n="ask_ph" data-i18n-title="tip_dock_ask"></button>
+              <span class="grow"></span>
+              <!-- the shown tab's own menu (app-layout.js dockItems): Changes -- what the record covers,
+                   pick changes to turn into blocks, the report; Tables & charts -- the result as CSV.
+                   None on the AI chat, nor where the tab has nothing to offer -->
+              <button class="icon flat dock-more hidden" data-dock="more" data-icon="more" data-i18n-title="tip_dock_more" aria-haspopup="menu" aria-expanded="false"></button>
+              <button class="icon flat" data-dock="max" data-icon="maximize" data-i18n-title="tip_dock_max"></button>
+              <button class="icon flat" data-dock="min" data-icon="chevron-down" data-i18n-title="tip_dock_min"></button>
+            </div>
+            <!-- the AI's confirmation cards (app-brake.js): over the Changes tab's timeline (over the
+                 AI chat where there is none), a line over the AI chat while one waits -->
+            <div class="bk-dock"></div>
+            <div class="tab tab-msgs chat-list on"></div>
+            <div class="tab tab-changes"></div>
+            <div class="tab tab-log"></div>
+            <div class="tab tab-results"></div>
+            <!-- the composer, under all the panels: built once and never redrawn, so a draft
+                 (and an IME composition) survives every state. The chip is what it asks about. -->
+            <div class="composer">
+              <div class="cbox">
+                <span class="cchip"><svg class="ic" aria-hidden="true"><use href="#i-tab"/></svg><span class="cl"></span><button class="cx" data-c="clear" data-i18n-title="tip_c_clear"><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button></span>
+                <textarea class="cta" rows="1" data-i18n-ph="ask_ph" data-i18n-title="tip_cta" spellcheck="false"></textarea>
+                <button class="csend" data-c="send" data-i18n-title="tip_send"><svg class="ic" aria-hidden="true"><use href="#i-send"/></svg></button>
+              </div>
+              <div class="chint"><i class="dot"></i><span class="ch-text"></span><button class="ch-copy flat" data-c="copy" data-icon="copy" data-i18n="copy" data-i18n-title="tip_c_copy"></button><span class="ch-keys" data-i18n="c_keys"></span></div>
+            </div>
+          </div>
+        </div>
+        <!-- the AI's proposal, on a proposal only (app-proposal.js): a window floating over
+             the page -- dragged by its head, sized from any edge or corner, × hides it and ✦ "Proposal" (prop_title) in the run
+             bar brings it back; what it does and why, the decision (approve and run, step through,
+             send back), then each step with its current and proposed value. The blocks under it
+             are the proposal's. -->
+        <section class="prop-card float lens hidden"></section>
+      </div>
+      <div class="pempty hint hidden" data-i18n="pane_empty"></div>
+    </section>
+  </template>
+
+  <!-- menus: the + menu, the ... menu, a tab's context menu; #menu2 is a submenu -->
+  <div id="menu" class="menu plate hidden" role="menu" tabindex="-1"></div>
+  <div id="menu2" class="menu plate hidden" role="menu" tabindex="-1"></div>
+  <!-- dialogs: text (rename, a request), a confirmation, a list -->
+  <div id="modal" class="modal hidden">
+    <div class="card plate" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div id="modal-title" class="mtitle"></div>
+      <div id="modal-body" class="mbody hidden"></div>
+      <textarea id="modal-text" rows="4"></textarea>
+      <div id="modal-help" class="modal-help hidden"></div>
+      <div class="row">
+        <!-- (their words are set each time a dialog opens: a language switch while one is
+             open must not turn its own confirm button into a plain OK) -->
+        <button id="modal-del" class="danger"></button>
+        <button id="modal-alt"></button>
+        <span class="grow"></span>
+        <button id="modal-cancel"></button>
+        <button id="modal-ok" class="primary"></button>
+      </div>
+    </div>
+  </div>
+  <div id="toast" class="plate" role="status"></div>
+  <!-- the beginner tour (app-tour.js): a ring around what a step is about, dimming the rest
+       (it takes no pointer: the page stays usable under it), and a card beside it. Not
+       modal: nothing traps the focus. -->
+  <div id="tour" class="tour-layer hidden">
+    <div class="tour-ring" aria-hidden="true"></div>
+    <div class="tour-card plate" role="dialog" aria-modal="false" aria-labelledby="tour-title" aria-describedby="tour-body">
+      <div class="tc-step"></div>
+      <div class="tc-title" id="tour-title"></div>
+      <div class="tc-body" id="tour-body"></div>
+      <div class="tc-row">
+        <button class="flat tc-skip" data-tour="skip"></button>
+        <span class="grow"></span>
+        <button data-tour="prev"></button>
+        <button class="primary" data-tour="next"></button>
+        <button class="primary" data-tour="done"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Liquid glass lenses: app-glass.js (lens) adds one filter per glass element, with a displacement
+       map drawn for its size; Chromium (WebView2) applies them as backdrop filters. -->
+  <svg id="wb-lenses" width="0" height="0" style="position:absolute" aria-hidden="true"></svg>
+</body>
+</html>

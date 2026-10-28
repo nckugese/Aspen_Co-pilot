@@ -1,0 +1,22 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "aspen-mcp",
+  "description": "Aspen Plus process simulation, optimization, and pinch analysis driven from your coding agent.",
+  "owner": {
+    "name": "NCKU GESE Lab",
+    "email": "nckugese@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "aspen-plus",
+      "description": "Control Aspen Plus via COM: build flowsheets, run simulations, optimize with nine algorithms, and run pinch analysis. Ships the doc-lookup subagent and the error-troubleshooting workflow.",
+      "author": {
+        "name": "NCKU GESE Lab",
+        "email": "nckugese@gmail.com"
+      },
+      "source": "./plugin",
+      "category": "engineering",
+      "homepage": "https://github.com/nckugese/Aspen_Co-pilot/tree/main/plugin"
+    }
+  ]
+}

@@ -1,0 +1,86 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "aspen-mcp"
+version = "1.0.0"
+description = "Control Aspen Plus via the Model Context Protocol -- flowsheet construction, simulation, optimization, and pinch analysis."
+requires-python = ">=3.11"
+authors = [{ name = "NCKU GESE Lab", email = "nckugese@gmail.com" }]
+keywords = ["aspen", "aspen plus", "mcp", "process simulation", "optimization", "pinch analysis"]
+classifiers = [
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+]
+
+# Base install: enough to build flowsheets, run simulations, and read results.
+# The <2 bound is load-bearing: MCP SDK 2.0 dropped `mcp.server.fastmcp` (it became
+# `mcp.server.mcpserver`), so an unbounded requirement resolves to a version that cannot
+# import server.py. Lift it only together with the migration to the 2.x API. >=1.10: tool
+# annotations and output schemas, which tools/intercept.py registers every tool with.
+dependencies = [
+    "mcp[cli]>=1.10,<2",
+    "pywin32>=306",
+]
+
+[project.optional-dependencies]
+# Derivative-free and gradient optimizers. Light -- no torch.
+opt = [
+    "numpy>=1.24",
+    "scipy>=1.11",
+    "pymoo>=0.6.1",
+    "scikit-optimize>=0.10",
+]
+# Bayesian / constrained-Bayesian optimizers. Pulls torch (~2 GB).
+bo = [
+    "numpy>=1.24",
+    "botorch>=0.10",
+    "gpytorch>=1.11",
+]
+all = [
+    "aspen-mcp[opt]",
+    "aspen-mcp[bo]",
+]
+
+[project.scripts]
+aspen-mcp = "aspen_mcp._entry:main"
+
+[project.urls]
+Homepage = "https://github.com/nckugese/Aspen_Co-pilot"
+Repository = "https://github.com/nckugese/Aspen_Co-pilot"
+
+# The project is laid out flat on disk (server.py next to tools/), but ships inside a
+# single `aspen_mcp` package so nothing leaks into the top-level namespace of the
+# environment. `_entry.py` re-creates the flat import path at runtime.
+#
+# `bypass-selection` turns off hatchling's package auto-detection: the flat layout has no
+# importable package for it to find, and every shipped path is listed explicitly below.
+# Note that `force-include` relocates paths wholesale and ignores `exclude`, so anything
+# that must not ship has to be kept out by not listing its parent.
+[tool.hatch.build.targets.wheel]
+bypass-selection = true
+
+[tool.hatch.build.targets.wheel.force-include]
+"_entry.py" = "aspen_mcp/_entry.py"
+"server.py" = "aspen_mcp/server.py"
+"aspen_manager.py" = "aspen_mcp/aspen_manager.py"
+"tools" = "aspen_mcp/tools"
+"searcher" = "aspen_mcp/searcher"
+"docs" = "aspen_mcp/docs"
+"workbench" = "aspen_mcp/workbench"
+"Blank_Simulation.bkp" = "aspen_mcp/Blank_Simulation.bkp"
+
+[tool.hatch.build.targets.sdist]
+only-include = [
+    "_entry.py",
+    "server.py",
+    "aspen_manager.py",
+    "tools",
+    "searcher",
+    "docs",
+    "workbench",
+    "Blank_Simulation.bkp",
+    "pyproject.toml",
+]

@@ -1,0 +1,64 @@
+__pycache__/
+*.pyc
+*.pyo
+.env
+venv/
+.venv/
+.claude/settings.local.json
+.claude/launch.json
+.claude/worktrees/
+# Leading slash matters: this ignores only the developer's own root-level client config.
+# Without it the pattern also swallows plugin/.mcp.json, which every plugin install needs
+# in order to have an MCP server at all.
+/.mcp.json
+
+# Local scratch files
+Examples/
+aspen-mcp/_test_*.py
+
+# Aspen Plus temp/working files
+*.apw
+*.appdf
+*.apprj
+*.ads
+*.bks
+*.co1
+*.co2
+*.cod
+*.dfm
+*.dyl
+*.edf
+*.gen
+*.his
+*.ia1
+*.ia2
+*.ikc
+*.in0
+*.inm
+*.inx
+*.itd
+*.jnl
+*.nin
+*.nis
+*.nol
+*.odi
+*.prd
+*.rp1
+*.rp2
+*.scr
+*.sin
+*.sor
+*.sum
+*.for
+*.def
+$*$backup*
+_*oas.*
+commonshellsettings.xml
+
+# Aspen MCP internal docs (maintainer only). Kept outside docs/ on purpose: the wheel
+# force-includes docs/ wholesale and force-include ignores exclude rules, so anything
+# left in docs/ ships to every installed user.
+aspen-mcp/maintainer/
+
+# Aspen MCP logs
+aspen-mcp/aspen_mcp.log

@@ -1,0 +1,367 @@
+"""Implementations for reaction-related tools.
+
+Handles creating reaction sets, adding stoichiometry, and setting kinetic
+parameters via direct COM tree manipulation.
+
+Key COM patterns for 2D tables (COEF, COEF1, EXPONENT, EXPONENT1):
+  - Dimension 0 = component ID, Dimension 1 = substream (usually MIXED)
+  - First InsertRow + SetLabel(d0) + SetLabel(d1=MIXED) creates the entry
+  - Second InsertRow auto-expands to N entries (N = number of components)
+  - Subsequent entries: SetLabel(d0=comp) on the empty slot (GetLabel(0,i)=='')
+  - FindNode works with path: TABLE\\rxn_no\\comp\\substream
+
+Some set types keep these tables 1-D (component only; Elements.Dimension 1, live V15:
+REAC-DIST): there only dimension 0 is labelled, and the value path is TABLE\\rxn_no\\comp.
+A type may lack a table altogether (USER has no EXPONENT row): it is skipped with a note.
+"""
+
+from __future__ import annotations
+
+import logging
+
+from tools import dialogs
+
+logger = logging.getLogger(__name__)
+
+_REACTIONS_BASE = r"\Data\Reactions\Reactions"
+
+
+def _dims(els) -> int:
+    """The number of dimensions of a table's Elements (2 when it cannot be read)."""
+    try:
+        return int(els.Dimension)
+    except Exception:
+        return 2
+
+
+def _create_2d_table_labels(app, table_path: str,
+                            components: list[str],
+                            substream: str = "MIXED") -> tuple[str | None, int]:
+    """Create component labels in a (component x substream) table, or a component-only one.
+
+    Only creates labels — does NOT set values. Call _set_2d_table_values
+    after ALL tables have their labels set.
+
+    Returns:
+        (error message or None, the table's number of dimensions).
+    """
+    node = app.Tree.FindNode(table_path)
+    if node is None:
+        return f"Node not found: {table_path}", 2
+
+    els = node.Elements
+    dims = _dims(els)
+    # Clear existing entries
+    while els.Count > 0:
+        els.RemoveRow(0, 0)
+
+    if dims == 1:
+        for idx, comp in enumerate(components):
+            els.InsertRow(0, idx)
+            els.SetLabel(0, idx, False, comp)
+        return None, 1
+
+    for idx, comp in enumerate(components):
+        if idx == 0:
+            els.InsertRow(0, 0)
+        else:
+            if els.Count <= idx:
+                els.InsertRow(0, els.Count)
+
+        if idx == 0:
+            target_idx = 0
+        else:
+            target_idx = None
+            for i in range(els.Count):
+                try:
+                    l0 = els.GetLabel(0, i)
+                    if l0 == '':
+                        target_idx = i
+                        break
+                except Exception:
+                    logger.debug("Could not read label at index %d in '%s'", i, table_path)
+                    continue
+            if target_idx is None:
+                continue
+
+        els.SetLabel(0, target_idx, False, comp)
+        try:
+            els.SetLabel(1, target_idx, False, substream)
+        except Exception:
+            logger.debug("dim1 SetLabel skipped for '%s' (likely auto-expanded)", table_path)
+
+    return None, dims
+
+
+def _set_2d_table_values(manager, session_name: str,
+                         table_path: str,
+                         entries: list[tuple[str, float]],
+                         substream: str = "MIXED", dims: int = 2) -> list[str]:
+    """Set values in a table that already has labels created (``dims`` 1: no substream level).
+
+    Call this AFTER all tables have their labels set via
+    _create_2d_table_labels to avoid cross-table invalidation.
+
+    Returns:
+        List of status messages.
+    """
+    messages = []
+    for comp, val in entries:
+        value_path = f"{table_path}\\{comp}\\{substream}" if dims != 1 else f"{table_path}\\{comp}"
+        result = manager.set_node_value(session_name, value_path, value=val)
+        messages.append(f"{comp}: {result}")
+    return messages
+
+
+@dialogs.quiet
+def add_reaction_set(
+    manager, session_name: str, reaction_set_name: str,
+    reaction_type: str = "POWERLAW"
+) -> str:
+    """Create a new reaction set.
+
+    Args:
+        reaction_set_name: Name for the reaction set (e.g. 'R-1').
+        reaction_type: Reaction model type. Options: POWERLAW, LHHW,
+                       GENERAL, REAC-DIST, USER, or a polymer type (FREE-RAD,
+                       ZIEGLER-NAT, EMULSION, STEP-GROWTH, SEGMENT-BAS); the string is
+                       passed through. Fields: docs/reactions/reactions-<type>.md.
+    """
+    app = manager.get_app(session_name)
+    if app is None:
+        return f"No active session named '{session_name}'."
+    try:
+        rxns = app.Tree.FindNode(_REACTIONS_BASE)
+        if rxns is None:
+            return "Reactions node not found in data tree."
+
+        # Check for duplicates
+        els = rxns.Elements
+        for i in range(els.Count):
+            el = els.Item(i)
+            if el and el.Name.upper() == reaction_set_name.upper():
+                return f"Reaction set '{reaction_set_name}' already exists."
+
+        # Create: Elements.Add("name!type")
+        rtype = reaction_type.upper()
+        els.Add(f"{reaction_set_name}!{rtype}")
+
+        # Verify creation
+        new_node = app.Tree.FindNode(f"{_REACTIONS_BASE}\\{reaction_set_name}")
+        if new_node is None:
+            return f"Failed to create reaction set '{reaction_set_name}'."
+
+        return (
+            f"Reaction set '{reaction_set_name}' created (type={rtype}). "
+            f"Use add_reaction to add reactions to this set."
+        )
+    except Exception as exc:
+        logger.error("Failed to create reaction set '%s': %s", reaction_set_name, exc, exc_info=True)
+        return f"Failed to create reaction set '{reaction_set_name}': {exc}"
+
+
+@dialogs.quiet
+def remove_reaction_set(manager, session_name: str, reaction_set_name: str) -> str:
+    """Remove a reaction set."""
+    app = manager.get_app(session_name)
+    if app is None:
+        return f"No active session named '{session_name}'."
+    try:
+        rxns = app.Tree.FindNode(_REACTIONS_BASE)
+        if rxns is None:
+            return "Reactions node not found."
+        els = rxns.Elements
+        for i in range(els.Count):
+            el = els.Item(i)
+            if el and el.Name.upper() == reaction_set_name.upper():
+                els.RemoveRow(0, i)
+                return f"Reaction set '{reaction_set_name}' removed."
+        return f"Reaction set '{reaction_set_name}' not found."
+    except Exception as exc:
+        logger.error("Failed to remove reaction set '%s': %s", reaction_set_name, exc, exc_info=True)
+        return f"Failed to remove reaction set '{reaction_set_name}': {exc}"
+
+
+@dialogs.quiet
+def add_reaction(
+    manager, session_name: str, reaction_set_name: str,
+    reaction_no: int,
+    reactants: dict[str, float],
+    products: dict[str, float],
+    phase: str = "L",
+    exponents: dict[str, float] | None = None,
+    substream: str = "MIXED",
+) -> str:
+    """Add a reaction with stoichiometry to an existing reaction set.
+
+    This creates reaction number `reaction_no` in the set and populates:
+      - REACTYPE (set to KINETIC)
+      - COEF (reactant stoichiometric coefficients, negative values)
+      - COEF1 (product stoichiometric coefficients, positive values)
+      - PHASE
+      - EXPONENT (concentration exponents for rate law)
+
+    Args:
+        reaction_set_name: Name of the reaction set (e.g. 'R-1').
+        reaction_no: Reaction number within the set (usually 1).
+        reactants: Dict of {component_id: stoichiometric_coefficient}.
+                   Use positive values — Aspen auto-negates for reactants.
+                   (e.g. {'ACETICAC': 1, 'METHANOL': 1}).
+        products: Dict of {component_id: stoichiometric_coefficient}.
+                  Use positive values (e.g. {'WATER': 1}).
+        phase: Reaction phase ('L' for liquid, 'V' for vapor).
+        exponents: Dict of {component_id: concentration_exponent}.
+                   If None, uses absolute values of reactant coefficients.
+        substream: Substream name (default 'MIXED').
+    """
+    app = manager.get_app(session_name)
+    if app is None:
+        return f"No active session named '{session_name}'."
+
+    base = f"{_REACTIONS_BASE}\\{reaction_set_name}\\Input"
+    rxn = str(reaction_no)
+
+    try:
+        # Verify reaction set exists
+        inp_node = app.Tree.FindNode(base)
+        if inp_node is None:
+            return f"Reaction set '{reaction_set_name}' not found."
+
+        # Step 1: Set REACTYPE (this auto-creates reaction entries in all tables)
+        rt_node = app.Tree.FindNode(f"{base}\\REACTYPE")
+        if rt_node is None:
+            return "REACTYPE node not found."
+        rt_els = rt_node.Elements
+
+        # Check if reaction number already exists
+        existing = False
+        for i in range(rt_els.Count):
+            el = rt_els.Item(i)
+            if el and el.Name == rxn:
+                existing = True
+                break
+
+        if not existing:
+            rt_els.InsertRow(0, rt_els.Count)
+            rt_els.SetLabel(0, rt_els.Count - 1, False, rxn)
+
+        rt_val = app.Tree.FindNode(f"{base}\\REACTYPE\\{rxn}")
+        if rt_val:
+            rt_val.Value = "KINETIC"
+
+        # Step 2: Set PHASE
+        ph_node = app.Tree.FindNode(f"{base}\\PHASE\\{rxn}")
+        if ph_node:
+            ph_node.Value = phase
+
+        # Prepare entries
+        coef_entries = [(comp, abs(coef)) for comp, coef in reactants.items()]
+        coef1_entries = [(comp, abs(coef)) for comp, coef in products.items()]
+        if exponents is None:
+            exponents = {comp: abs(coef) for comp, coef in reactants.items()}
+        exp_entries = list(exponents.items())
+
+        # Phase A: Create ALL labels first (InsertRow + SetLabel)
+        # This avoids cross-table invalidation. A table the set's type lacks is skipped.
+        # EXPONENT shares COEF's rows (live V15: labelling COEF gives it the same; emptying it
+        # empties COEF), so it is not labelled itself: only its values are written.
+        tables = [("COEF", "Reactants (COEF)", coef_entries), ("COEF1", "Products (COEF1)", coef1_entries),
+                  ("EXPONENT", "Exponents", exp_entries)]
+        dims, skipped = {}, set()
+        for key, _, entries in tables:
+            table = f"{base}\\{key}\\{rxn}"
+            if app.Tree.FindNode(table) is None:
+                skipped.add(key)
+                continue
+            if key == "EXPONENT" and "COEF" in dims:
+                dims[key] = dims["COEF"]
+                continue
+            err, dims[key] = _create_2d_table_labels(app, table, [c for c, _ in entries], substream)
+            if err:
+                return f"Failed creating labels: {err}"
+
+        # Phase B: Set ALL values (labels are stable across all tables)
+        lines, n_writes, n_failed = [], 0, 0
+        for key, title, entries in tables:
+            if key in skipped:
+                lines.append(f"  {title}: skipped -- this reaction set's type has no {key} table")
+                continue
+            msgs = _set_2d_table_values(manager, session_name, f"{base}\\{key}\\{rxn}", entries,
+                                        substream, dims[key])
+            n_writes += len(msgs)
+            n_failed += sum(1 for m in msgs if not m.partition(": ")[2].startswith("Set '"))
+            lines.append(f"  {title}: {', '.join(msgs)}")
+
+        head = (f"Reaction {rxn} added to '{reaction_set_name}':" if not n_failed else
+                f"Reaction {rxn} added to '{reaction_set_name}' only in part -- {n_failed} of "
+                f"{n_writes} writes FAILED (see below):")
+        return "\n".join([head, f"  Phase: {phase}", *lines])
+
+    except Exception as exc:
+        logger.error("Failed to add reaction %s to '%s': %s", rxn, reaction_set_name, exc, exc_info=True)
+        return f"Failed to add reaction {rxn} to '{reaction_set_name}': {exc}"
+
+
+@dialogs.quiet
+def remove_reaction(
+    manager, session_name: str, reaction_set_name: str, reaction_no: int
+) -> str:
+    """Remove a single reaction from a reaction set.
+
+    Removes the reaction number from REACTYPE and all related tables
+    (COEF, COEF1, EXPONENT, EXPONENT1, PRE_EXP, ACT_ENERGY, etc.).
+
+    Args:
+        reaction_set_name: Name of the reaction set (e.g. 'R-1').
+        reaction_no: Reaction number to remove.
+    """
+    app = manager.get_app(session_name)
+    if app is None:
+        return f"No active session named '{session_name}'."
+
+    base = f"{_REACTIONS_BASE}\\{reaction_set_name}\\Input"
+    rxn = str(reaction_no)
+
+    try:
+        # Remove from REACTYPE (this should cascade to other tables)
+        rt_node = app.Tree.FindNode(f"{base}\\REACTYPE")
+        if rt_node is None:
+            return f"Reaction set '{reaction_set_name}' not found."
+
+        rt_els = rt_node.Elements
+        target_idx = None
+        for i in range(rt_els.Count):
+            el = rt_els.Item(i)
+            if el and el.Name == rxn:
+                target_idx = i
+                break
+
+        if target_idx is None:
+            return f"Reaction {rxn} not found in '{reaction_set_name}'."
+
+        rt_els.RemoveRow(0, target_idx)
+
+        # Also clean up 2D tables and scalar tables explicitly
+        for table in ["COEF", "COEF1", "EXPONENT", "EXPONENT1",
+                       "PRE_EXP", "ACT_ENERGY", "T_EXP", "PHASE",
+                       "OPT_KEQ", "R_D_CBASIS", "R_D_RBASIS",
+                       "R_D_KBASIS", "R_D_SBASIS", "R_D_PBASL",
+                       "R_D_PBASS", "A", "B", "C", "D"]:
+            tbl_node = app.Tree.FindNode(f"{base}\\{table}")
+            if tbl_node is None:
+                continue
+            els = tbl_node.Elements
+            for i in range(els.Count):
+                el = els.Item(i)
+                if el and el.Name == rxn:
+                    try:
+                        els.RemoveRow(0, i)
+                    except Exception:
+                        logger.debug("Could not remove reaction %s from table '%s'", rxn, table)
+                    break
+
+        return f"Reaction {rxn} removed from '{reaction_set_name}'."
+
+    except Exception as exc:
+        logger.error("Failed to remove reaction %s from '%s': %s", rxn, reaction_set_name, exc, exc_info=True)
+        return f"Failed to remove reaction {rxn} from '{reaction_set_name}': {exc}"

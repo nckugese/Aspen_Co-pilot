@@ -1,0 +1,15 @@
+# Base dependencies
+# <2 is required: MCP SDK 2.0 dropped `mcp.server.fastmcp` (now `mcp.server.mcpserver`),
+# so an unbounded requirement installs a version server.py cannot import. >=1.10: tool
+# annotations and output schemas, which tools/intercept.py registers every tool with.
+mcp[cli]>=1.10,<2
+pywin32>=306
+
+# Optimization algorithms — install only the ones you need.
+# Each algorithm of the optimize tool dynamically imports its library at call time.
+numpy>=1.24              # required by pymoo, scipy, botorch
+scipy>=1.11              # gradient (SLSQP)
+pymoo>=0.6.1             # nsga2, nsga3, pso/mopso, de/gde3
+scikit-optimize>=0.10    # bo (single-objective, skopt ask-tell)
+botorch>=0.10            # bo / cbo / afmcbo (multi-objective qLogNEHVI) — pulls torch (~122MB on Windows)
+gpytorch>=1.11           # dependency of botorch (bo/cbo)

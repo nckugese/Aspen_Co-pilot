@@ -1,0 +1,39 @@
+{
+  "description": "Hooks for the Aspen Plus plugin. SessionStart checks once per session that the Aspen Plus MCP environment is set up for the pinned server version, surfaces an available update, and writes ~/.aspen-mcp/aspen-workbench.cmd (a shortcut that opens the workbench). It reads a local cache of the latest release; to refresh that cache it starts check-update.ps1 in the background at most once a day, which runs `git ls-remote --tags` against the plugin's repository -- the hooks' only network access. Stop and UserPromptSubmit hand the AI the Aspen Workbench's waiting Ask AI requests when channels are off, and, while the workbench is open, note when the AI's turn starts and ends so its chat and header can show the AI still working (workbench-asks.ps1); they say nothing when none wait.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}/scripts/session-start.ps1\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}/scripts/workbench-asks.ps1\" -Event stop",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}/scripts/workbench-asks.ps1\" -Event prompt",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}

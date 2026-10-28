@@ -1,0 +1,21 @@
+{
+  "name": "aspen-plus",
+  "version": "1.0.0",
+  "description": "Control Aspen Plus from your coding agent via the COM API: build and edit flowsheets, configure property methods and reactions, run simulations, optimize with 9 algorithms (NSGA-II/III, PSO, DE, BO, CBO, AFM-CBO, gradient, grid search), and run pinch analysis. Bundles a doc-lookup subagent and an error diagnose-fix-record-share workflow.",
+  "author": {
+    "name": "NCKU GESE Lab",
+    "email": "nckugese@gmail.com"
+  },
+  "homepage": "https://github.com/nckugese/Aspen_Co-pilot",
+  "repository": "https://github.com/nckugese/Aspen_Co-pilot",
+  "license": "MIT",
+  "keywords": [
+    "aspen",
+    "aspen plus",
+    "process simulation",
+    "chemical engineering",
+    "optimization",
+    "pinch analysis",
+    "flowsheet"
+  ]
+}

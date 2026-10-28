@@ -1,0 +1,43 @@
+{
+  "name": "aspen-plus",
+  "version": "1.0.0",
+  "description": "Control Aspen Plus from Codex via the COM API.\n\nAliases: @aspen, @aspen-plus, Aspen, Aspen Plus.\n\nUse Aspen Plus when the user asks to build, edit, run, debug, or optimize a chemical process flowsheet; to place blocks or connect streams; to set property methods, components, or reactions; to run a simulation and read results; or to perform pinch / heat-integration analysis.\n\nRequires a local Aspen Plus installation and license (Windows only). The plugin drives that installation over COM; it does not ship Aspen Plus.",
+  "author": {
+    "name": "NCKU GESE Lab",
+    "email": "nckugese@gmail.com"
+  },
+  "homepage": "https://github.com/nckugese/Aspen_Co-pilot",
+  "repository": "https://github.com/nckugese/Aspen_Co-pilot",
+  "license": "MIT",
+  "keywords": [
+    "aspen",
+    "aspen plus",
+    "process simulation",
+    "chemical engineering",
+    "optimization",
+    "pinch analysis",
+    "flowsheet"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "hooks": "./hooks/codex.json",
+  "interface": {
+    "displayName": "Aspen Plus",
+    "shortDescription": "Build, run, and optimize Aspen Plus flowsheets",
+    "longDescription": "Drives a local Aspen Plus installation over the COM API. Build and edit flowsheets, set property methods, components and reactions, run simulations and read results, optimize with nine algorithms including NSGA-II/III, PSO, DE and constrained Bayesian optimization, and run pinch analysis for heat integration. Includes a documentation-lookup workflow so paths and parameters are never guessed, plus an error diagnose-fix-record loop.",
+    "developerName": "NCKU GESE Lab",
+    "category": "Engineering",
+    "capabilities": [
+      "Read",
+      "Write",
+      "Interactive"
+    ],
+    "websiteURL": "https://github.com/nckugese/Aspen_Co-pilot",
+    "defaultPrompt": [
+      "Build a CO2-to-olefins flowsheet in Aspen Plus",
+      "My RadFrac column will not converge -- diagnose it",
+      "Run a pinch analysis on the current flowsheet"
+    ],
+    "brandColor": "#0B6E4F"
+  }
+}

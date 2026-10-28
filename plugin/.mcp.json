@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "aspen-plus": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "aspen-mcp[all] @ git+https://github.com/nckugese/Aspen_Co-pilot@v1.0.0#subdirectory=aspen-mcp",
+        "aspen-mcp"
+      ]
+    }
+  }
+}
